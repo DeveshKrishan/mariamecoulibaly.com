@@ -71,8 +71,8 @@ var stubProjects = []models.Project{
 	},
 	{
 		ID: "14", Slug: "chabotfireacademy", Title: "Chabot Fire Academy", PublishedAt: "2021-08-05",
-		Client: "Chabot-Las Positas Community College",
-		Role: "Producer, Director, Cinematographer, Interviewer, and Sound Editor",
+		Client:  "Chabot-Las Positas Community College",
+		Role:    "Producer, Director, Cinematographer, Interviewer, and Sound Editor",
 		Summary: "Best Documentary at the 2023 Chabot Film & Animation Festival",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "A look into the students of Chabot College’s Fire Tech Academy."},
