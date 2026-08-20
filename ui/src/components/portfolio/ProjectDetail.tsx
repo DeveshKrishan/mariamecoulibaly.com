@@ -1,4 +1,5 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
+import { motion } from 'framer-motion';
 import { formatDetailDate } from '../../lib/dates';
 import { absoluteUrl } from '../../lib/site';
 import { hasContent, truncate } from '../../lib/text';
@@ -55,7 +56,11 @@ export function ProjectDetail({
     : `${project.title}, a project by Mariam Coulibaly.`;
 
   return (
-    <article>
+    <motion.article
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    >
       <Seo
         title={project.title}
         description={description}
@@ -97,6 +102,6 @@ export function ProjectDetail({
       </div>
 
       <ProjectPagination previous={previous} next={next} />
-    </article>
+    </motion.article>
   );
 }
