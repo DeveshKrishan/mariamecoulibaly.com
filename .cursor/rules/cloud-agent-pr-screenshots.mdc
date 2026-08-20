@@ -14,11 +14,11 @@ screenshot section so reviewers can see the visual impact at a glance.
 Screenshots and recordings belong **only in the PR description**, not in
 the repository. They must not appear in Files changed.
 
-- Save captures under `tmp/screenshots/` (gitignored). Do not `git add` that
+- Save captures under `tmp/screenshots/`. Do **not** `git add` that
   folder.
-- **Do not** commit PNGs, JPGs, WebPs, GIFs, or videos used for PR review
-  (including `docs/pr-screenshots/`, `screenshots/`, `*.before.png`,
-  `*.after.png`).
+- **Do not** `git add` or commit `docs/pr-screenshots/`, `screenshots/`,
+  `*.before.png`, `*.after.png`, or any PNG/JPG/WebP/GIF/video used for
+  PR review.
 - **Do not** link the PR body at branch-raw paths like
   `.../raw/<branch>/docs/pr-screenshots/...` — that requires committing
   the files.
@@ -30,7 +30,7 @@ the repository. They must not appear in Files changed.
 ![after](docs/pr-screenshots/after-home.png)
 git add docs/pr-screenshots/
 
-# ✅ GOOD — tmp (gitignored) + description only
+# ✅ GOOD — tmp/screenshots + description only (never git add)
 <img alt="Home after" src="tmp/screenshots/home-after.png" width="400" />
 ```
 
@@ -88,7 +88,7 @@ Use descriptive `alt` text and filenames (e.g. `home-hero-before.png`,
 
 - [ ] Before screenshot captured from base/reference state
 - [ ] After screenshot captured from your branch with the dev app running
-- [ ] Both images saved under `tmp/screenshots/` (gitignored)
+- [ ] Both images saved under `tmp/screenshots/` (do not git add)
 - [ ] PR body includes the Screenshots section with `<img>` tags
 - [ ] Same viewport and route used for both shots
 - [ ] No screenshot or recording files staged or committed
