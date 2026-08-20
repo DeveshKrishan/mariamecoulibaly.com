@@ -1,0 +1,72 @@
+---
+description: Cloud agent PRs must include before/after screenshots in the description
+alwaysApply: true
+---
+
+# Cloud Agent PR Screenshots
+
+When a **Cloud Agent** creates or updates a pull request (via
+`ManagePullRequest`), the PR body must include a **before and after**
+screenshot section so reviewers can see the visual impact at a glance.
+
+## When required
+
+- **UI, layout, styling, copy, or animation changes** — before and after
+  screenshots are **required**.
+- **Non-visual changes** (API-only, config, tests, docs with no rendered
+  output) — omit the screenshots section and briefly note why (e.g.
+  "No visual changes").
+
+## Capturing screenshots
+
+1. **Before** — Capture the current state *before* your changes:
+   - For rebuild/parity work, screenshot the live reference page
+     (https://www.mariamecoulibaly.com/) or the relevant route on the
+     running dev build checked out at the PR base branch.
+   - Save to `/opt/cursor/artifacts/screenshots/<descriptive-name>-before.png`.
+2. **After** — Run the dev app with your branch, navigate to the same
+   route/viewport, and capture the updated state.
+   - Save to `/opt/cursor/artifacts/screenshots/<descriptive-name>-after.png`.
+3. Use the same viewport width and page scroll position for both shots so
+   the comparison is meaningful (default to desktop ~1280px unless the
+   change is mobile-specific).
+4. Prefer still screenshots for the before/after pair. Use screen
+   recording (`RecordScreen`) only when motion or interaction is the
+   primary change — link the video separately in the walkthrough.
+
+## PR body format
+
+Include a **Screenshots** section near the top of the PR description (after
+the summary, before technical notes). Reference artifacts with absolute paths
+in HTML `<img>` tags — `ManagePullRequest` uploads them and rewrites URLs
+for GitHub:
+
+```markdown
+## Summary
+
+Brief description of what changed and why.
+
+## Screenshots
+
+| Before | After |
+|--------|-------|
+| <img alt="About page before" src="/opt/cursor/artifacts/screenshots/about-before.png" width="400" /> | <img alt="About page after" src="/opt/cursor/artifacts/screenshots/about-after.png" width="400" /> |
+
+## Walkthrough
+
+Optional notes on how to verify, edge cases, or links to screen recordings.
+```
+
+Use descriptive `alt` text and filenames (e.g. `home-hero-before.png`,
+`project-card-hover-after.png`).
+
+## Checklist before opening the PR
+
+- [ ] Before screenshot captured from base/reference state
+- [ ] After screenshot captured from your branch with the dev app running
+- [ ] Both images saved under `/opt/cursor/artifacts/screenshots/`
+- [ ] PR body includes the Screenshots section with `<img>` tags
+- [ ] Same viewport and route used for both shots
+
+When **updating** an existing PR after further visual changes, refresh the
+after screenshot (and the before shot if the baseline changed).
