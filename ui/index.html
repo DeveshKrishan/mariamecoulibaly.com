@@ -17,7 +17,40 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <title>Mariam Coulibaly</title>
+    <!--
+      Static fallback for OG/Twitter crawlers (Facebook, Slack, iMessage,
+      etc.) that don't execute JS, so a link shared before route-specific
+      tags (see src/components/seo/Seo.tsx) render still gets a sensible
+      preview. React doesn't know about these pre-existing tags, so each one
+      is marked `data-seo-fallback` and removed by Seo.tsx the moment a
+      route-specific <Seo> mounts, to avoid duplicate title/meta elements.
+    -->
+    <title data-seo-fallback>Mariam Coulibaly</title>
+    <meta
+      data-seo-fallback
+      name="description"
+      content="Portfolio of Mariam Coulibaly, an emerging media professional from the San Francisco Bay Area."
+    />
+    <meta data-seo-fallback property="og:type" content="website" />
+    <meta data-seo-fallback property="og:site_name" content="Mariam Coulibaly" />
+    <meta data-seo-fallback property="og:title" content="Mariam Coulibaly" />
+    <meta
+      data-seo-fallback
+      property="og:description"
+      content="Portfolio of Mariam Coulibaly, an emerging media professional from the San Francisco Bay Area."
+    />
+    <meta
+      data-seo-fallback
+      property="og:url"
+      content="https://mariamecoulibaly-com-ui.vercel.app/"
+    />
+    <meta data-seo-fallback name="twitter:card" content="summary_large_image" />
+    <meta data-seo-fallback name="twitter:title" content="Mariam Coulibaly" />
+    <meta
+      data-seo-fallback
+      name="twitter:description"
+      content="Portfolio of Mariam Coulibaly, an emerging media professional from the San Francisco Bay Area."
+    />
   </head>
   <body>
     <div id="root"></div>

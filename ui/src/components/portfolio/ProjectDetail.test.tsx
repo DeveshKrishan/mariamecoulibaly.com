@@ -186,4 +186,42 @@ describe('ProjectDetail', () => {
 
     expect(screen.queryByText('Coming soon.')).not.toBeInTheDocument();
   });
+
+  it('sets SEO title, description, and canonical URL from the project', () => {
+    render(
+      <MemoryRouter>
+        <ProjectDetail project={baseProject} previous={null} next={null} />
+      </MemoryRouter>,
+    );
+
+    expect(document.title).toBe('Resident Home — Mariam Coulibaly');
+    expect(
+      document.head.querySelector('meta[name="description"]'),
+    ).toHaveAttribute(
+      'content',
+      'Organized footage and re-cut Amazon advertisements',
+    );
+    expect(
+      document.head.querySelector('link[rel="canonical"]'),
+    ).toHaveAttribute(
+      'href',
+      'https://mariamecoulibaly-com-ui.vercel.app/projects/residenthome',
+    );
+  });
+
+  it('falls back to a generic SEO description when the summary is "Coming soon."', () => {
+    render(
+      <MemoryRouter>
+        <ProjectDetail
+          project={{ ...baseProject, summary: 'Coming soon.' }}
+          previous={null}
+          next={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(
+      document.head.querySelector('meta[name="description"]'),
+    ).toHaveAttribute('content', 'Resident Home, a project by Mariam Coulibaly.');
+  });
 });

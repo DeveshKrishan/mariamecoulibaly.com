@@ -1,5 +1,8 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
 import { formatDetailDate } from '../../lib/dates';
+import { absoluteUrl } from '../../lib/site';
+import { hasContent, truncate } from '../../lib/text';
+import { Seo } from '../seo/Seo';
 import { ProjectBlock, ProjectBody } from './ProjectBody';
 import { ProjectPagination } from './ProjectPagination';
 
@@ -10,7 +13,7 @@ function MetaLine({
   children: string;
   className?: string;
 }) {
-  if (!children || children === 'Coming soon.') return null;
+  if (!hasContent(children)) return null;
   return <p className={className ? `mb-1 ${className}` : 'mb-1'}>{children}</p>;
 }
 
@@ -47,9 +50,19 @@ export function ProjectDetail({
   next: Project | null;
 }) {
   const { media, rest } = splitLeadingMedia(project.body);
+  const description = hasContent(project.summary)
+    ? truncate(project.summary, 160)
+    : `${project.title}, a project by Mariam Coulibaly.`;
 
   return (
     <article>
+      <Seo
+        title={project.title}
+        description={description}
+        image={project.thumbnailUrl}
+        url={absoluteUrl(`/projects/${project.slug}`)}
+        type="article"
+      />
       <header className="mb-8">
         <h1 className="text-3xl md:text-4xl mb-3">{project.title}</h1>
         <time
