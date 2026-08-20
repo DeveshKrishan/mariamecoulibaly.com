@@ -1,6 +1,0 @@
-# Copy to app-config.yml (or set CONFIG_FILE) to override defaults locally.
-# Environment variables (API_PORT, API_CORS_ORIGIN, API_ENV, ...) always win over this file.
-
-env: development
-port: 4000
-cors_origin: http://localhost:5173

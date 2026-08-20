@@ -18,7 +18,7 @@ import (
 
 const (
 	envPrefix         = "API_"
-	defaultConfigFile = "app-config.yml"
+	defaultConfigFile = "config/app-config.yml"
 )
 
 // Config holds all runtime configuration for the API server.
@@ -42,10 +42,10 @@ func defaults() map[string]any {
 // Load builds a Config from defaults, an optional config file, and
 // environment variables, in that order of increasing precedence.
 //
-// The config file path defaults to "app-config.yml" in the working
-// directory and can be overridden with the CONFIG_FILE environment
-// variable. It is optional; if the file doesn't exist, it's silently
-// skipped.
+// The config file path defaults to "config/app-config.yml" relative to
+// the working directory and can be overridden with the CONFIG_FILE
+// environment variable. It is optional; if the file doesn't exist, it's
+// silently skipped.
 //
 // Environment variables are read with an API_ prefix, e.g. API_PORT,
 // API_CORS_ORIGIN, API_ENV.
@@ -83,7 +83,7 @@ func Load() (*Config, error) {
 
 	// PaaS runtimes (Vercel, Railway, Render, Fly, Heroku) assign the
 	// listen port via the unprefixed PORT variable and require the server
-	// to honor it exactly, so it takes precedence over API_PORT/app-config.yml.
+	// to honor it exactly, so it takes precedence over API_PORT/config/app-config.yml.
 	if v := os.Getenv("PORT"); v != "" {
 		port, err := strconv.Atoi(v)
 		if err != nil {

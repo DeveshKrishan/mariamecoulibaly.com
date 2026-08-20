@@ -144,7 +144,7 @@ vite.config.ts.timestamp-*
 
 # Go
 api/bin/
-api/app-config.yml
+api/config/app-config.yml
 api/dist/
 *.exe
 *.exe~
