@@ -19,8 +19,8 @@ Runs on http://localhost:4000.
 ## Configuration
 
 Configuration is loaded with [koanf](https://github.com/knadh/koanf), layered
-in increasing priority: built-in defaults → optional `app-config.yml` file →
-environment variables. See `internal/config/app-config.go`.
+in increasing priority: built-in defaults → optional `config/app-config.yml`
+file → environment variables. See `internal/config/app-config.go`.
 
 | Env var | Config key | Default | Description |
 |---------|------------|---------|--------------|
@@ -29,10 +29,16 @@ environment variables. See `internal/config/app-config.go`.
 | `API_CORS_ORIGIN` | `cors_origin` | `http://localhost:5173` | Allowed origin for browser requests from `ui` |
 | `PORT` | `port` (override) | — | Unprefixed port assigned by PaaS hosts (Vercel, Railway, Render, Fly). Takes precedence over `API_PORT` when set. |
 
-Copy [`app-config.example.yml`](./app-config.example.yml) to `app-config.yml`
-(gitignored) to override defaults locally without env vars, or set
-`CONFIG_FILE` to point elsewhere. Environment variables always win over the
-file.
+Create `config/app-config.yml` (gitignored) with any of the keys above to
+override defaults locally without env vars, e.g.:
+
+```yaml
+port: 4000
+cors_origin: http://localhost:5173
+```
+
+Or set `CONFIG_FILE` to point elsewhere. Environment variables always win
+over the file.
 
 ## Endpoints
 
@@ -51,6 +57,7 @@ Data is currently in-memory stub data (`internal/api/projects.go`,
 
 ```
 cmd/api/main.go       # entrypoint
+config/               # app-config.yml (gitignored, optional local overrides)
 internal/api/         # HTTP handlers, router, CORS middleware
 internal/config/      # koanf-based config loading
 internal/models/      # Project, AboutPage structs (mirror shared/)
