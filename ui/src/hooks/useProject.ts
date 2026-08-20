@@ -4,6 +4,7 @@ import { getProject, getProjects } from '../lib/api';
 import { findProjectNeighbors } from '../lib/projectNeighbors';
 
 export function useProject(slug: string | undefined) {
+  const [prevSlug, setPrevSlug] = useState(slug);
   const [project, setProject] = useState<Project | null>(null);
   const [previous, setPrevious] = useState<Project | null>(null);
   const [next, setNext] = useState<Project | null>(null);
@@ -11,20 +12,22 @@ export function useProject(slug: string | undefined) {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (!slug) {
-      setIsLoading(false);
-      setNotFound(true);
-      return;
+  if (slug !== prevSlug) {
+    setPrevSlug(slug);
+    if (slug) {
+      setProject(null);
+      setPrevious(null);
+      setNext(null);
+      setIsLoading(true);
+      setNotFound(false);
+      setError(null);
     }
+  }
+
+  useEffect(() => {
+    if (!slug) return;
 
     let cancelled = false;
-    setIsLoading(true);
-    setNotFound(false);
-    setError(null);
-    setProject(null);
-    setPrevious(null);
-    setNext(null);
 
     Promise.all([getProject(slug), getProjects()])
       .then(([detail, projects]) => {
@@ -51,6 +54,17 @@ export function useProject(slug: string | undefined) {
       cancelled = true;
     };
   }, [slug]);
+
+  if (!slug) {
+    return {
+      project: null,
+      previous: null,
+      next: null,
+      isLoading: false,
+      notFound: true,
+      error: null,
+    };
+  }
 
   return { project, previous, next, isLoading, notFound, error };
 }
