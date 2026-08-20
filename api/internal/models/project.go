@@ -21,6 +21,7 @@ type Project struct {
 	Slug         string          `json:"slug"`
 	Title        string          `json:"title"`
 	PublishedAt  string          `json:"publishedAt"`
+	Client       string          `json:"client"`
 	Role         string          `json:"role"`
 	Summary      string          `json:"summary"`
 	Body         []RichTextBlock `json:"body"`

@@ -1,39 +1,17 @@
-import type { Project } from '@mariame/shared';
-import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getProject } from '../lib/api';
+import { ProjectDetail } from '../components/portfolio/ProjectDetail';
+import { useProject } from '../hooks/useProject';
 
 export function ProjectPage() {
   const { slug } = useParams<{ slug: string }>();
-  const [project, setProject] = useState<Project | null>(null);
-  const [notFound, setNotFound] = useState(false);
-
-  useEffect(() => {
-    if (!slug) return;
-    setNotFound(false);
-    setProject(null);
-    getProject(slug)
-      .then(setProject)
-      .catch(() => setNotFound(true));
-  }, [slug]);
+  const { project, previous, next, isLoading, notFound, error } =
+    useProject(slug);
 
   if (notFound) return <p>Project not found.</p>;
-  if (!project) return <p>Loading…</p>;
+  if (error) return <p>Could not load project: {error.message}</p>;
+  if (isLoading || !project) return <p>Loading…</p>;
 
   return (
-    <article className="max-w-2xl">
-      {project.thumbnailUrl ? (
-        <img
-          src={project.thumbnailUrl}
-          alt={project.title}
-          className="w-full mb-6 object-cover"
-        />
-      ) : null}
-      <h1 className="text-3xl mb-1">{project.title}</h1>
-      <p className="text-sm opacity-70 mb-6">
-        {project.publishedAt} — {project.role}
-      </p>
-      <p>{project.summary}</p>
-    </article>
+    <ProjectDetail project={project} previous={previous} next={next} />
   );
 }
