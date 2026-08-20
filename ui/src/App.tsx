@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import { Route, Routes } from 'react-router-dom';
 import { PageLayout } from './components/layout/PageLayout';
 import { AboutPage } from './pages/AboutPage';
@@ -12,6 +13,7 @@ function App() {
         <Route path="/about-me" element={<AboutPage />} />
         <Route path="/projects/:slug" element={<ProjectPage />} />
       </Routes>
+      <Analytics />
     </PageLayout>
   );
 }
