@@ -42,8 +42,9 @@ don't assume they pass:
 
 Run both, not just the workspace you think you touched, and report the real
 pass/fail results. Use the `develop` subagent (`.cursor/agents/develop.md`)
-for the full implement → format → lint → test → review flow, triggered by
-"start work on ...".
+for the full implement → format → lint → test → review → PR flow, triggered
+by "start work on ...". The develop agent runs all quality subagents **before**
+opening a PR; never create a PR until format, lint, tests, and review are clean.
 
 ## Always reference the original site for design
 
