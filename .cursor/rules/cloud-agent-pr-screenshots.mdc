@@ -1,5 +1,5 @@
 ---
-description: Cloud agent PRs must include before/after screenshots in the description
+description: PR screenshots go in the description only — never commit them to the repo
 alwaysApply: true
 ---
 
@@ -8,6 +8,32 @@ alwaysApply: true
 When a **Cloud Agent** creates or updates a pull request (via
 `ManagePullRequest`), the PR body must include a **before and after**
 screenshot section so reviewers can see the visual impact at a glance.
+
+## Never commit screenshots to git
+
+Screenshots and recordings belong **only in the PR description**, not in
+the repository. They must not appear in Files changed.
+
+- **Do not** `git add` or commit PNGs, JPGs, WebPs, GIFs, or videos used
+  for PR review (including `docs/pr-screenshots/`, `screenshots/`,
+  `*.before.png`, `*.after.png`).
+- **Do not** add `/opt/cursor/artifacts/` or any screenshot folder to the
+  repo.
+- **Do not** link the PR body at branch-raw paths like
+  `.../raw/<branch>/docs/pr-screenshots/...` — that requires committing
+  the files.
+- Save captures under `/opt/cursor/artifacts/screenshots/` and embed them
+  with `<img>` tags. `ManagePullRequest` uploads them to GitHub and
+  rewrites the URLs.
+
+```markdown
+# ❌ BAD — files land in the repo
+![after](docs/pr-screenshots/after-home.png)
+git add docs/pr-screenshots/
+
+# ✅ GOOD — description only
+<img alt="Home after" src="/opt/cursor/artifacts/screenshots/home-after.png" width="400" />
+```
 
 ## When required
 
@@ -67,6 +93,7 @@ Use descriptive `alt` text and filenames (e.g. `home-hero-before.png`,
 - [ ] Both images saved under `/opt/cursor/artifacts/screenshots/`
 - [ ] PR body includes the Screenshots section with `<img>` tags
 - [ ] Same viewport and route used for both shots
+- [ ] No screenshot or recording files staged or committed
 
 When **updating** an existing PR after further visual changes, refresh the
 after screenshot (and the before shot if the baseline changed).
