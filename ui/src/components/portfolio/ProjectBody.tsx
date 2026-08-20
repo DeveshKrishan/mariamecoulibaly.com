@@ -2,7 +2,9 @@ import type { RichTextBlock } from '@mariame/shared';
 import { isDirectVideoUrl, toEmbedSrc } from '../../lib/embeds';
 
 function ParagraphBlockView({ text }: { text: string }) {
-  return <p className="mb-4 leading-relaxed whitespace-pre-wrap">{text}</p>;
+  return (
+    <p className="mb-4 leading-relaxed whitespace-pre-wrap italic">{text}</p>
+  );
 }
 
 function ImageBlockView({
@@ -84,12 +86,12 @@ function EmbedBlockView({ url, provider }: { url: string; provider?: string }) {
 
 function LinkBlockView({ url, label }: { url: string; label: string }) {
   return (
-    <p className="mb-6">
+    <p className="mb-6 text-center">
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-block border border-ink px-4 py-2 text-sm uppercase tracking-wide hover:bg-ink hover:text-white transition-colors"
+        className="inline-block rounded-full border border-ink px-6 py-2 text-sm hover:bg-ink hover:text-white transition-colors"
       >
         {label}
       </a>
@@ -97,7 +99,8 @@ function LinkBlockView({ url, label }: { url: string; label: string }) {
   );
 }
 
-function BlockView({ block }: { block: RichTextBlock }) {
+/** Renders one rich-text body block (paragraph, image, embed, or link). */
+export function ProjectBlock({ block }: { block: RichTextBlock }) {
   switch (block.type) {
     case 'paragraph':
       return <ParagraphBlockView text={block.text} />;
@@ -118,9 +121,9 @@ export function ProjectBody({ body }: { body: RichTextBlock[] }) {
   if (body.length === 0) return null;
 
   return (
-    <div className="mt-8">
+    <div className="mt-6">
       {body.map((block, index) => (
-        <BlockView key={`${block.type}-${index}`} block={block} />
+        <ProjectBlock key={`${block.type}-${index}`} block={block} />
       ))}
     </div>
   );

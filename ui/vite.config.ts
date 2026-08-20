@@ -5,7 +5,16 @@ import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  // Tailwind must run before Vite 8's CSS pipeline so `@import "tailwindcss"`
+  // reaches `@tailwindcss/vite` generate:serve instead of being flattened
+  // into an unexpanded `@tailwind utilities` stub.
+  plugins: [tailwindcss(), react()],
+  css: {
+    transformer: 'postcss',
+  },
+  build: {
+    cssMinify: 'esbuild',
+  },
   server: {
     port: 5173,
   },
