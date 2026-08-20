@@ -3,6 +3,7 @@ module github.com/DeveshKrishan/mariamecoulibaly.com/api
 go 1.24
 
 require (
+	github.com/go-chi/chi/v5 v5.3.2
 	github.com/knadh/koanf/parsers/yaml v1.1.1
 	github.com/knadh/koanf/providers/confmap v1.0.1
 	github.com/knadh/koanf/providers/env/v2 v2.0.1

@@ -42,6 +42,29 @@ func TestLoadEnvOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadPortEnvOverridesAPIPort(t *testing.T) {
+	// PaaS runtimes (Vercel, Railway, Render) assign the listen port via
+	// the unprefixed PORT variable, which must win over API_PORT.
+	t.Setenv("API_PORT", "8080")
+	t.Setenv("PORT", "3000")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Port != 3000 {
+		t.Errorf("Port = %d, want 3000 (PORT should override API_PORT)", cfg.Port)
+	}
+}
+
+func TestLoadPortEnvInvalidValue(t *testing.T) {
+	t.Setenv("PORT", "not-a-number")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("Load() error = nil, want error for invalid PORT value")
+	}
+}
+
 func writeTempConfigFile(t *testing.T, contents string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "app-config.yml")

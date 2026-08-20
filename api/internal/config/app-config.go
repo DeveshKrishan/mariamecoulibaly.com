@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/knadh/koanf/parsers/yaml"
@@ -78,6 +79,17 @@ func Load() (*Config, error) {
 	var cfg Config
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return nil, fmt.Errorf("config: unmarshalling: %w", err)
+	}
+
+	// PaaS runtimes (Vercel, Railway, Render, Fly, Heroku) assign the
+	// listen port via the unprefixed PORT variable and require the server
+	// to honor it exactly, so it takes precedence over API_PORT/app-config.yml.
+	if v := os.Getenv("PORT"); v != "" {
+		port, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, fmt.Errorf("config: parsing PORT %q: %w", v, err)
+		}
+		cfg.Port = port
 	}
 
 	return &cfg, nil
