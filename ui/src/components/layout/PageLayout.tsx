@@ -3,9 +3,13 @@ import { Header } from './Header';
 
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen max-w-[1280px] mx-auto">
+    <div className="min-h-screen">
       <Header />
-      <main className="pt-24 px-[5vw]">{children}</main>
+      {/*
+        Horizontal inset is owned by each page so About can full-bleed its
+        dark hero while Projects/Home keep the reference site’s inset width.
+      */}
+      <main className="pt-[4.5rem]">{children}</main>
     </div>
   );
 }

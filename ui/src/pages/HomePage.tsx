@@ -7,7 +7,7 @@ export function HomePage() {
   const { projects, isLoading, error } = useProjects();
 
   return (
-    <>
+    <div className="mx-auto max-w-[1280px] px-[5vw] pb-24">
       <Seo
         title="Mariam Coulibaly"
         description="Portfolio of Mariam Coulibaly, an emerging media professional from the San Francisco Bay Area."
@@ -20,6 +20,6 @@ export function HomePage() {
       ) : (
         <ProjectGrid projects={projects} />
       )}
-    </>
+    </div>
   );
 }
