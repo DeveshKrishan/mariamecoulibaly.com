@@ -14,25 +14,24 @@ screenshot section so reviewers can see the visual impact at a glance.
 Screenshots and recordings belong **only in the PR description**, not in
 the repository. They must not appear in Files changed.
 
-- **Do not** `git add` or commit PNGs, JPGs, WebPs, GIFs, or videos used
-  for PR review (including `docs/pr-screenshots/`, `screenshots/`,
-  `*.before.png`, `*.after.png`).
-- **Do not** add `/opt/cursor/artifacts/` or any screenshot folder to the
-  repo.
+- Save captures under `tmp/screenshots/` (gitignored). Do not `git add` that
+  folder.
+- **Do not** commit PNGs, JPGs, WebPs, GIFs, or videos used for PR review
+  (including `docs/pr-screenshots/`, `screenshots/`, `*.before.png`,
+  `*.after.png`).
 - **Do not** link the PR body at branch-raw paths like
   `.../raw/<branch>/docs/pr-screenshots/...` — that requires committing
   the files.
-- Save captures under `/opt/cursor/artifacts/screenshots/` and embed them
-  with `<img>` tags. `ManagePullRequest` uploads them to GitHub and
-  rewrites the URLs.
+- Embed with `<img>` tags. `ManagePullRequest` uploads them and rewrites
+  URLs for GitHub.
 
 ```markdown
 # ❌ BAD — files land in the repo
 ![after](docs/pr-screenshots/after-home.png)
 git add docs/pr-screenshots/
 
-# ✅ GOOD — description only
-<img alt="Home after" src="/opt/cursor/artifacts/screenshots/home-after.png" width="400" />
+# ✅ GOOD — tmp (gitignored) + description only
+<img alt="Home after" src="tmp/screenshots/home-after.png" width="400" />
 ```
 
 ## When required
@@ -49,10 +48,10 @@ git add docs/pr-screenshots/
    - For rebuild/parity work, screenshot the live reference page
      (https://www.mariamecoulibaly.com/) or the relevant route on the
      running dev build checked out at the PR base branch.
-   - Save to `/opt/cursor/artifacts/screenshots/<descriptive-name>-before.png`.
+   - Save to `tmp/screenshots/<descriptive-name>-before.png`.
 2. **After** — Run the dev app with your branch, navigate to the same
    route/viewport, and capture the updated state.
-   - Save to `/opt/cursor/artifacts/screenshots/<descriptive-name>-after.png`.
+   - Save to `tmp/screenshots/<descriptive-name>-after.png`.
 3. Use the same viewport width and page scroll position for both shots so
    the comparison is meaningful (default to desktop ~1280px unless the
    change is mobile-specific).
@@ -63,9 +62,8 @@ git add docs/pr-screenshots/
 ## PR body format
 
 Include a **Screenshots** section near the top of the PR description (after
-the summary, before technical notes). Reference artifacts with absolute paths
-in HTML `<img>` tags — `ManagePullRequest` uploads them and rewrites URLs
-for GitHub:
+the summary, before technical notes). Point `<img>` tags at the tmp files —
+`ManagePullRequest` uploads them and rewrites URLs for GitHub:
 
 ```markdown
 ## Summary
@@ -76,7 +74,7 @@ Brief description of what changed and why.
 
 | Before | After |
 |--------|-------|
-| <img alt="About page before" src="/opt/cursor/artifacts/screenshots/about-before.png" width="400" /> | <img alt="About page after" src="/opt/cursor/artifacts/screenshots/about-after.png" width="400" /> |
+| <img alt="About page before" src="tmp/screenshots/about-before.png" width="400" /> | <img alt="About page after" src="tmp/screenshots/about-after.png" width="400" /> |
 
 ## Walkthrough
 
@@ -90,7 +88,7 @@ Use descriptive `alt` text and filenames (e.g. `home-hero-before.png`,
 
 - [ ] Before screenshot captured from base/reference state
 - [ ] After screenshot captured from your branch with the dev app running
-- [ ] Both images saved under `/opt/cursor/artifacts/screenshots/`
+- [ ] Both images saved under `tmp/screenshots/` (gitignored)
 - [ ] PR body includes the Screenshots section with `<img>` tags
 - [ ] Same viewport and route used for both shots
 - [ ] No screenshot or recording files staged or committed
