@@ -37,6 +37,13 @@ VITE_SITE_URL=http://localhost:5173
   deployed on Vercel with Web Analytics enabled for the project; it's a no-op
   in local dev
 
+## Deployment
+
+Deployed on Vercel with **Root Directory** set to `ui`. Client-side routes
+(`/about-me`, `/projects/:slug`, …) need an SPA fallback so deep links and
+refreshes serve `index.html` instead of a CDN 404. That rewrite lives in
+[`vercel.json`](./vercel.json).
+
 ## Tooling
 
 | Command | Description |
