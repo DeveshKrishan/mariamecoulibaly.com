@@ -21,7 +21,7 @@ export function AboutPage() {
   if (!page) return <p>Loading…</p>;
 
   return (
-    <div className="space-y-16 pb-24 md:space-y-24">
+    <div className="space-y-10 pb-24 md:space-y-14">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,7 +72,7 @@ export function AboutPage() {
           </div>
         ) : null}
 
-        <div className="md:col-start-14 md:col-span-12 md:-mt-[1.5vw]">
+        <div className="md:col-start-14 md:col-span-11 md:-mt-[1.5vw]">
           <h2 className="font-heading text-2xl font-medium md:text-3xl">{page.greeting}</h2>
           <p
             className="mt-4 leading-relaxed [&_em]:italic"

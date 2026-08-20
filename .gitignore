@@ -150,3 +150,6 @@ api/dist/
 *.exe~
 *.test
 *.out
+
+# Local PR screenshot captures (never commit — embed in the PR description)
+/tmp/

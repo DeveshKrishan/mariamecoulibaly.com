@@ -27,7 +27,7 @@ var stubProjects = []models.Project{
 		Body: []models.RichTextBlock{
 			{"type": "image", "url": "/images/projects/residenthome.jpg", "alt": "Resident Home"},
 			{"type": "paragraph", "text": "Resident Home is a house of direct-to-consumer sleep brands, best known for Nectar, DreamCloud, Siena, and Awara mattresses."},
-			{"type": "link", "url": "https://m.media-amazon.com/images/S/al-na-9d5791cf-3faf/88c96b86-52f0-45ba-8ac6-25a9ed632108.mp4/videoTile.mp4", "label": "Watch"},
+			{"type": "link", "url": "https://m.media-amazon.com/images/S/al-na-9d5791cf-3faf/88c96b86-52f0-45ba-8ac6-25a9ed632108.mp4/videoTile.mp4", "label": "Watch Here"},
 		},
 		ThumbnailURL: "/images/projects/residenthome.jpg", SortOrder: 0, Status: models.StatusPublished,
 	},

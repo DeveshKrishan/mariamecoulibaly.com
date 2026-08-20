@@ -97,6 +97,76 @@ describe('ProjectDetail', () => {
     ).toHaveAttribute('href', '/projects/udacity');
   });
 
+  it('places a leading image in the media column and remaining body beside it', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ProjectDetail
+          project={{
+            ...baseProject,
+            body: [
+              { type: 'image', url: '/lead.jpg', alt: 'Lead still' },
+              {
+                type: 'paragraph',
+                text: 'Resident Home is a house of direct-to-consumer sleep brands.',
+              },
+              {
+                type: 'link',
+                url: 'https://example.com/watch',
+                label: 'Watch Here',
+              },
+            ],
+          }}
+          previous={null}
+          next={null}
+        />
+      </MemoryRouter>,
+    );
+
+    const mediaCol = container.querySelector('.md\\:col-span-4');
+    const contentCol = container.querySelector('.md\\:col-span-7');
+    const leadImage = screen.getByRole('img', { name: 'Lead still' });
+
+    expect(mediaCol).toContainElement(leadImage);
+    expect(contentCol).toHaveTextContent('Resident Home/Nectar');
+    expect(contentCol).toHaveTextContent(
+      'Resident Home is a house of direct-to-consumer sleep brands.',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Watch Here' }),
+    ).toBeInTheDocument();
+    expect(contentCol).toContainElement(
+      screen.getByRole('link', { name: 'Watch Here' }),
+    );
+  });
+
+  it('falls back to the thumbnail when there is no leading media block', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ProjectDetail
+          project={{
+            ...baseProject,
+            thumbnailUrl: '/images/projects/residenthome.jpg',
+            body: [{ type: 'paragraph', text: 'Only copy in the body.' }],
+          }}
+          previous={null}
+          next={null}
+        />
+      </MemoryRouter>,
+    );
+
+    const mediaCol = container.querySelector('.md\\:col-span-4');
+    const contentCol = container.querySelector('.md\\:col-span-7');
+    const thumbnail = screen.getByRole('img', { name: 'Resident Home' });
+
+    expect(thumbnail).toHaveAttribute(
+      'src',
+      '/images/projects/residenthome.jpg',
+    );
+    expect(mediaCol).toContainElement(thumbnail);
+    expect(contentCol).toHaveTextContent('Only copy in the body.');
+    expect(contentCol).not.toContainElement(thumbnail);
+  });
+
   it('hides placeholder Coming soon meta lines', () => {
     render(
       <MemoryRouter>
