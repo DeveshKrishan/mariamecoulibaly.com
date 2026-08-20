@@ -29,21 +29,34 @@ export function useProject(slug: string | undefined) {
 
     let cancelled = false;
 
-    Promise.all([getProject(slug), getProjects()])
-      .then(([detail, projects]) => {
+    // Load the detail first; neighbor lookup is best-effort so a list
+    // endpoint failure still shows the project page.
+    getProject(slug)
+      .then(async (detail) => {
         if (cancelled) return;
-        const neighbors = findProjectNeighbors(projects, slug);
         setProject(detail);
-        setPrevious(neighbors.previous);
-        setNext(neighbors.next);
+
+        try {
+          const projects = await getProjects();
+          if (cancelled) return;
+          const neighbors = findProjectNeighbors(projects, slug);
+          setPrevious(neighbors.previous);
+          setNext(neighbors.next);
+        } catch {
+          if (!cancelled) {
+            setPrevious(null);
+            setNext(null);
+          }
+        }
       })
-      .catch((err: Error) => {
+      .catch((err: unknown) => {
         if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
         // 404 from getProject surfaces as a thrown Error from the api client.
-        if (/status 404/.test(err.message)) {
+        if (/status 404/.test(message)) {
           setNotFound(true);
         } else {
-          setError(err);
+          setError(err instanceof Error ? err : new Error(message));
         }
       })
       .finally(() => {

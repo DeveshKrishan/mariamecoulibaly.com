@@ -47,9 +47,7 @@ function EmbedBlockView({ url, provider }: { url: string; provider?: string }) {
         controls
         className="w-full mb-6 bg-neutral-100"
         preload="metadata"
-      >
-        <track kind="captions" />
-      </video>
+      />
     );
   }
 
