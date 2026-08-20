@@ -56,7 +56,11 @@ export function Header() {
 
   const shellClass = [
     'fixed top-0 left-0 right-0 z-50 transition-[transform,background-color,color,box-shadow] duration-300 ease-out',
-    hidden && !menuOpen ? '-translate-y-full' : 'translate-y-0',
+    // Avoid `translate-y-0` while the menu is open: any transform on the
+    // header makes `position:fixed` descendants use the header as their
+    // containing block, so the overlay collapses to the bar height and
+    // page content shows through the mobile menu.
+    hidden && !menuOpen ? '-translate-y-full' : '',
     menuOpen || scrolled
       ? 'bg-white text-ink shadow-[0_1px_0_rgba(21,9,9,0.06)]'
       : 'bg-transparent text-ink',
@@ -67,7 +71,7 @@ export function Header() {
 
   return (
     <header className={shellClass}>
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-[5vw] py-4">
+      <div className="relative z-50 mx-auto flex max-w-[1280px] items-center justify-between px-[5vw] py-4">
         <NavLink
           to="/"
           className="font-heading text-lg font-bold tracking-tight"
@@ -118,10 +122,10 @@ export function Header() {
       {menuOpen ? (
         <div
           id="mobile-nav"
-          className="fixed inset-0 top-[3.5rem] z-40 bg-white text-ink md:hidden"
+          className="fixed inset-x-0 top-0 bottom-0 z-40 bg-white text-ink md:hidden"
         >
           <nav
-            className="flex h-full flex-col gap-6 px-[5vw] pt-10 font-heading text-2xl"
+            className="flex h-full flex-col gap-6 px-[5vw] pt-24 font-heading text-2xl"
             aria-label="Mobile"
           >
             <NavLink
