@@ -10,5 +10,6 @@ type AboutPageLink struct {
 type AboutPage struct {
 	Headline string          `json:"headline"`
 	Bio      string          `json:"bio"`
+	PhotoURL string          `json:"photoUrl"`
 	Links    []AboutPageLink `json:"links"`
 }

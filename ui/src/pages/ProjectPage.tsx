@@ -22,6 +22,13 @@ export function ProjectPage() {
 
   return (
     <article className="max-w-2xl">
+      {project.thumbnailUrl ? (
+        <img
+          src={project.thumbnailUrl}
+          alt={project.title}
+          className="w-full mb-6 object-cover"
+        />
+      ) : null}
       <h1 className="text-3xl mb-1">{project.title}</h1>
       <p className="text-sm opacity-70 mb-6">
         {project.publishedAt} — {project.role}

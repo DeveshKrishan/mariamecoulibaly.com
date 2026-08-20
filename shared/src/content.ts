@@ -26,5 +26,6 @@ export interface AboutPageLink {
 export interface AboutPage {
   headline: string;
   bio: string;
+  photoUrl: string;
   links: AboutPageLink[];
 }
