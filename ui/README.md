@@ -16,7 +16,13 @@ Runs on http://localhost:5173 and expects the API (`api/`) at
 
 ```env
 VITE_API_URL=http://localhost:4000
+VITE_SITE_URL=http://localhost:5173
 ```
+
+`VITE_SITE_URL` is the site's public base URL, used to build absolute
+`og:image`/`og:url`/canonical URLs for per-page SEO meta tags (see
+`src/components/seo/Seo.tsx`). Defaults to the production `ui` Vercel URL
+(`https://mariamecoulibaly-com-ui.vercel.app`) when unset.
 
 ## Stack
 

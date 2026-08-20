@@ -1,7 +1,10 @@
 import type { AboutPage as AboutPageData } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { Seo } from '../components/seo/Seo';
 import { getAboutPage } from '../lib/api';
+import { absoluteUrl } from '../lib/site';
+import { stripHtml, truncate } from '../lib/text';
 
 // Reproduces the reference site's Squarespace "fluid engine" grid for the
 // About Me page: a 24-column content grid (see docs/PLAN.md Appendix B /
@@ -20,8 +23,16 @@ export function AboutPage() {
 
   if (!page) return <p>Loading…</p>;
 
+  const description = page.headline || truncate(stripHtml(page.bio), 160);
+
   return (
     <div className="space-y-10 pb-24 md:space-y-14">
+      <Seo
+        title="About Me"
+        description={description}
+        image={page.photoUrl}
+        url={absoluteUrl('/about-me')}
+      />
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
