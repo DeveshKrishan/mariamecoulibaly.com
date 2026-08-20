@@ -26,6 +26,10 @@ VITE_API_URL=http://localhost:4000
 - Framer Motion (scroll/hover animations)
 - `@dnd-kit` (drag-and-drop, for admin edit mode)
 - Types shared with the API via `@mariame/shared` (`shared/`)
+- [Vercel Web Analytics](https://vercel.com/docs/analytics) (`@vercel/analytics`,
+  mounted via `<Analytics />` in `src/App.tsx`) — only collects data once
+  deployed on Vercel with Web Analytics enabled for the project; it's a no-op
+  in local dev
 
 ## Tooling
 
