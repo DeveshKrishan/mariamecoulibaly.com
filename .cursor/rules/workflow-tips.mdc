@@ -1,0 +1,59 @@
+---
+description: Workflow tips - stacked PRs and design reference source of truth
+alwaysApply: true
+---
+
+# Workflow Tips
+
+## Break up work into stacked PRs
+
+Don't land large changes as one giant PR. Split work into small, reviewable,
+stacked PRs using `gh`:
+
+- Use the `split-to-prs` skill to plan the slices before creating branches.
+- Order slices so foundations land before consumers (e.g. shared types before
+  the UI/API code that uses them).
+- Each PR in the stack branches off the previous PR's branch, not `main`:
+
+  ```bash
+  git checkout -b feat/part-1 main
+  # ...commit slice 1...
+  git push -u origin feat/part-1
+  gh pr create --base main --head feat/part-1
+
+  git checkout -b feat/part-2 feat/part-1
+  # ...commit slice 2...
+  git push -u origin feat/part-2
+  gh pr create --base feat/part-1 --head feat/part-2
+  ```
+
+- As earlier PRs in the stack merge, retarget the next PR's base with
+  `gh pr edit <number> --base <new-base>` and rebase.
+- Default to independent PRs off `main`; only stack when there's a real
+  dependency between slices.
+
+## Always run the full test suite
+
+Never consider a feature or fix done without actually running the tests —
+don't assume they pass:
+
+- UI: `pnpm --filter ui test` (vitest)
+- API: `cd api && make test` (go test ./...)
+
+Run both, not just the workspace you think you touched, and report the real
+pass/fail results. Use the `develop` subagent (`.cursor/agents/develop.md`)
+for the full implement → format → lint → test → review flow, triggered by
+"start work on ...".
+
+## Always reference the original site for design
+
+This is a rebuild of [mariamecoulibaly.com](https://www.mariamecoulibaly.com/).
+For any layout, styling, animation, copy, or content work:
+
+- Check the live site to confirm exact copy, spacing, colors, fonts, and
+  interaction/animation behavior (hover states, transitions, timing) before
+  implementing — don't approximate from memory or guesswork.
+- Preserve existing project slugs and page structure for URL/SEO parity
+  (see `docs/PLAN.md`).
+- When in doubt about a design detail, fetch the relevant live page and
+  compare side-by-side rather than assuming.
