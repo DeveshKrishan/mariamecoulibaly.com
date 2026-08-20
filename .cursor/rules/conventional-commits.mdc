@@ -1,0 +1,80 @@
+---
+description: Conventional commit messages and PR titles (lowercase, type prefix)
+alwaysApply: true
+---
+
+# Conventional Commits and PR Titles
+
+This repo enforces [Conventional Commits](https://www.conventionalcommits.org/)
+via commitlint in CI (`pnpm lint:commits`, PR Lint workflow). Follow these
+rules for every commit and pull request.
+
+## Commit messages
+
+Use the format:
+
+```
+type: lowercase subject
+
+Optional body with more detail.
+```
+
+- **Always include a type prefix** — e.g. `feat:`, `fix:`, `chore:`, `docs:`,
+  `refactor:`, `test:`, `ci:`.
+- **Subject is lowercase** — no sentence-case or title-case.
+- **Keep the subject concise** — describe what changed, not how you changed it.
+- **Use the imperative mood** — "add resume link", not "added resume link".
+
+Common types:
+
+| Type | Use for |
+|------|---------|
+| `feat` | New user-facing behavior |
+| `fix` | Bug fixes |
+| `chore` | Tooling, deps, config, non-product code |
+| `docs` | Documentation only |
+| `refactor` | Code changes that aren't fixes or features |
+| `test` | Adding or updating tests |
+| `ci` | CI/CD workflow changes |
+
+Examples:
+
+```
+feat: add resume link from original site to about page
+fix: correct linkedin url on about page
+chore: add conventional commit cursor rule
+```
+
+Before pushing, validate locally:
+
+```bash
+pnpm lint:commits
+```
+
+## Pull request titles
+
+PR titles follow the same convention as commit messages:
+
+- **Conventional commit format** — start with `type: ` (e.g. `feat: …`).
+- **Lowercase subject** — same rules as commit message subjects.
+- **Match the primary commit** — when a PR has one main change, the PR title
+  should mirror that commit's subject line.
+
+Good:
+
+```
+feat: add resume link from original site to about page
+fix: resolve pr lint commit message failures
+chore: add conventional commit cursor rule
+```
+
+Bad:
+
+```
+Add resume link from original site to About page
+Feat: Add Resume Link
+FEAT: ADD RESUME LINK
+```
+
+When creating or updating PRs, set the title to the conventional format — do
+not use title-case or sentence-case headings.
