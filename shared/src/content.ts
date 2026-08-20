@@ -63,7 +63,10 @@ export interface AboutPageLink {
 }
 
 export interface AboutPage {
+  title: string;
   headline: string;
+  greeting: string;
+  /** Bio copy as a small trusted inline-HTML fragment (e.g. `<em>` for production titles). */
   bio: string;
   photoUrl: string;
   links: AboutPageLink[];

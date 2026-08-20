@@ -8,7 +8,11 @@ type AboutPageLink struct {
 
 // AboutPage is the content of the About Me page.
 type AboutPage struct {
-	Headline string          `json:"headline"`
+	Title    string `json:"title"`
+	Headline string `json:"headline"`
+	Greeting string `json:"greeting"`
+	// Bio is a small trusted inline-HTML fragment (e.g. <em> around production
+	// titles) rendered as-is by the ui app — not user-generated content.
 	Bio      string          `json:"bio"`
 	PhotoURL string          `json:"photoUrl"`
 	Links    []AboutPageLink `json:"links"`
