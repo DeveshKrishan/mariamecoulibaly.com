@@ -9,12 +9,12 @@ export function Header() {
       <NavLink to="/" className="font-heading text-lg font-bold tracking-tight">
         Mariam Coulibaly
       </NavLink>
-      <nav className="flex gap-6 text-sm uppercase tracking-wide">
-        <NavLink to="/" className={navLinkClass} end>
-          Projects
-        </NavLink>
+      <nav className="flex gap-6 text-sm tracking-wide">
         <NavLink to="/about-me" className={navLinkClass}>
           About Me
+        </NavLink>
+        <NavLink to="/" className={navLinkClass} end>
+          Projects
         </NavLink>
       </nav>
     </header>
