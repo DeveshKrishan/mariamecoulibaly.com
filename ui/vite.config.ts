@@ -12,9 +12,6 @@ export default defineConfig({
   css: {
     transformer: 'postcss',
   },
-  build: {
-    cssMinify: 'esbuild',
-  },
   server: {
     port: 5173,
   },
