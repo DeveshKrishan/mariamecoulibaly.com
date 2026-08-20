@@ -798,9 +798,10 @@ cutover — see Section 8). The rest had meaningless auto-generated slugs
 on the live site, so we generated clean kebab-case ones from their titles
 instead.
 
-Roles/summaries/thumbnails beyond `residenthome` are still `"Coming soon."`
-placeholders — Phase 2's content migration (Section 10) is what backfills
-the real copy, images, and video embeds from each project's detail page.
+Roles, summaries, body copy, and thumbnails for all 16 projects are now
+migrated from the reference site's detail pages (including embedded
+YouTube videos and outbound "Watch Here" links to Instagram/Google Drive
+for content that can't be embedded inline).
 
 ---
 
