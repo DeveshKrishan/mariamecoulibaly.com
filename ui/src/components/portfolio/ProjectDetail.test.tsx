@@ -52,10 +52,9 @@ describe('ProjectBody', () => {
       'src',
       'https://www.youtube.com/embed/eq6bDsFdjnA',
     );
-    expect(screen.getByRole('link', { name: 'Watch' })).toHaveAttribute(
-      'href',
-      'https://example.com/watch',
-    );
+    const watchLink = screen.getByRole('link', { name: 'Watch' });
+    expect(watchLink).toHaveAttribute('href', 'https://example.com/watch');
+    expect(watchLink).toHaveClass('project-cta');
   });
 
   it('renders nothing for an empty body', () => {

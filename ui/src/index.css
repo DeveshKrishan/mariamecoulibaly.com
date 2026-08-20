@@ -39,3 +39,47 @@ h6 {
 a {
   color: inherit;
 }
+
+/*
+ * Project detail CTA ("Watch Here", etc.) — matches Squarespace's
+ * primary outline + flex wipe: fill rises from the bottom on hover,
+ * text flips to white. Timing/easing from the live site's static.css.
+ */
+.project-cta {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  border: 2px solid var(--color-ink);
+  border-radius: 9999px;
+  padding: 1.2em 2.004em;
+  font-size: 1.2rem;
+  line-height: 1.2em;
+  background: transparent;
+  color: var(--color-ink);
+  text-decoration: none;
+  transition: color 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+  isolation: isolate;
+}
+
+.project-cta::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -2px;
+  right: -2px;
+  bottom: -2px;
+  left: -2px;
+  border-radius: 9999px;
+  background-color: var(--color-ink);
+  transform: translateZ(0);
+  transition: clip-path 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+  clip-path: polygon(-2% 102%, 102% 102%, 102% 102%, -2% 102%);
+}
+
+.project-cta:hover {
+  color: #fff;
+}
+
+.project-cta:hover::before {
+  clip-path: polygon(-2% -2%, 102% -2%, 102% 102%, -2% 102%);
+}

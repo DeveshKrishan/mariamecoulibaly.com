@@ -91,7 +91,7 @@ function LinkBlockView({ url, label }: { url: string; label: string }) {
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-block rounded-full border border-ink px-6 py-2 text-sm hover:bg-ink hover:text-white transition-colors"
+        className="project-cta"
       >
         {label}
       </a>
