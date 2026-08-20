@@ -345,9 +345,10 @@ interface Project {
   slug: string;
   title: string;
   publishedAt: string;       // ISO date
+  client: string;            // organization line under the date
   role: string;
-  summary: string;
-  body: RichTextBlock[];
+  summary: string;           // short highlight / credit line
+  body: RichTextBlock[];     // paragraph | image | embed | link
   thumbnailUrl: string;
   sortOrder: number;
   status: 'draft' | 'published';
