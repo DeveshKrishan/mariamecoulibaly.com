@@ -160,18 +160,20 @@ Two viable approaches — pick one before Phase 2:
 **Pros:** Auth, media, drafts, and versioning largely handled.  
 **Cons:** Monthly cost, less control over edit UX.
 
-#### Option B: Custom backend (recommended for full edit-mode control)
+#### Option B: Custom backend (recommended for full edit-mode control) — ✅ **Selected**
 
 | Layer | Choice |
 |-------|--------|
-| API | **Node.js + Express** or **Next.js API routes** |
-| Database | **PostgreSQL** (Neon/Supabase) or **SQLite** (Turso) |
-| Auth | **Clerk**, **Auth.js**, or **Supabase Auth** |
+| API | **Go** (`net/http`, Go 1.24+) — see `api/` |
+| Database | **Supabase** (hosted PostgreSQL) — see Section 9 for schema |
+| DB access | [sqlc](https://sqlc.dev/) (generates type-safe Go from SQL) targeting `pgx/v5` as the runtime driver — no ORM |
+| Migrations | **Supabase CLI** (`supabase migration new` / `supabase db push`) — also gives a local Postgres via `supabase start` that sqlc generates against |
+| Go tooling | [koanf](https://github.com/knadh/koanf) (config loading), [golangci-lint](https://golangci-lint.run/) (linting), [GoReleaser](https://goreleaser.com/) (releases), `gofmt`/`goimports` (formatting) |
+| Auth | Session/JWT middleware with an admin email allowlist (Section 7) |
 | Media storage | **Cloudflare R2** or **AWS S3** + CDN |
-| ORM | **Drizzle** or **Prisma** |
 
-**Pros:** Full control over drag-and-drop save flow, custom admin UI.  
-**Cons:** More code to build and maintain.
+**Pros:** Full control over drag-and-drop save flow, custom admin UI, small static binary, fast startup, low memory footprint.  
+**Cons:** More code to build and maintain; smaller ecosystem of CMS-style helpers than Node.
 
 ### Hosting (see Section 8)
 
@@ -238,53 +240,66 @@ This avoids maintaining a separate admin UI that can drift from the public desig
 
 ## 5. React Implementation Plan
 
-### 5.1 Project scaffolding
+### 5.1 Project scaffolding — Monorepo layout
 
-```bash
-pnpm create vite . --template react-ts
-pnpm add react-router-dom framer-motion @dnd-kit/core @dnd-kit/sortable
-pnpm add -D tailwindcss postcss autoprefixer
+This is a **pnpm monorepo** with a React frontend and a **Go** backend as
+top-level sibling folders, plus a shared TypeScript types package:
+
+```
+.
+├── ui/                          # React 19 + Vite frontend
+│   └── src/
+│       ├── components/
+│       │   ├── layout/
+│       │   │   ├── Header.tsx
+│       │   │   └── PageLayout.tsx
+│       │   ├── portfolio/
+│       │   │   ├── ProjectGrid.tsx
+│       │   │   └── ProjectCard.tsx
+│       │   └── editor/          # edit-mode-only components (Phase 3)
+│       ├── hooks/
+│       │   └── useProjects.ts
+│       ├── pages/
+│       │   ├── HomePage.tsx
+│       │   ├── AboutPage.tsx
+│       │   └── ProjectPage.tsx
+│       ├── lib/
+│       │   └── api.ts           # fetch client for the Go API
+│       └── App.tsx
+├── api/                         # Go backend (net/http)
+│   ├── go.mod
+│   ├── .golangci.yml            # golangci-lint config
+│   ├── .goreleaser.yaml         # GoReleaser config (tagged api/vX.Y.Z releases)
+│   ├── Makefile                 # dev, build, fmt, lint, test, release targets
+│   ├── cmd/api/main.go
+│   └── internal/
+│       ├── api/                 # HTTP handlers, router, middleware
+│       ├── config/              # koanf-based config loading
+│       └── models/              # Project, AboutPage structs
+├── shared/                      # TS types shared by the ui app (Project, AboutPage)
+├── pnpm-workspace.yaml
+└── package.json                 # root scripts: dev:ui, dev:api, build:ui, build:api
 ```
 
-**Package manager:** pnpm (Node 22+). Commit messages follow
+**Package managers:** pnpm (Node 22+) for `ui` and `shared`; Go
+modules (Go 1.24+) for `api`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/), enforced on pull
 requests by the `PR Lint` workflow.
 
-Suggested folder structure:
+```bash
+# scaffold commands used to set this up
+pnpm create vite ui --template react-ts
+cd ui && pnpm add react-router-dom framer-motion @dnd-kit/core @dnd-kit/sortable
+pnpm add -D tailwindcss @tailwindcss/vite
 
+cd api && go mod init github.com/DeveshKrishan/mariamecoulibaly.com/api
 ```
-src/
-├── components/
-│   ├── layout/
-│   │   ├── Header.tsx
-│   │   ├── MobileNav.tsx
-│   │   └── PageLayout.tsx
-│   ├── portfolio/
-│   │   ├── ProjectGrid.tsx
-│   │   ├── ProjectCard.tsx
-│   │   └── ProjectDetail.tsx
-│   ├── about/
-│   │   └── AboutPage.tsx
-│   └── editor/          # edit-mode-only components
-│       ├── EditToolbar.tsx
-│       ├── EditableText.tsx
-│       ├── DraggableProjectCard.tsx
-│       └── ImageUploader.tsx
-├── hooks/
-│   ├── useAuth.ts
-│   ├── useEditMode.ts
-│   └── useProjects.ts
-├── pages/
-│   ├── HomePage.tsx
-│   ├── AboutPage.tsx
-│   ├── ProjectPage.tsx
-│   └── AdminLoginPage.tsx
-├── lib/
-│   ├── api.ts
-│   └── sanitize.ts
-├── types/
-│   └── content.ts
-└── App.tsx
+
+Run each app during development from the repo root:
+
+```bash
+pnpm dev:ui    # Vite dev server on :5173
+pnpm dev:api   # Go API on :4000
 ```
 
 ### 5.2 Core components
@@ -317,8 +332,14 @@ src/
 
 ### 5.3 Data fetching
 
+Types are defined once in `shared/src/content.ts` and imported by
+`ui` as `@mariame/shared`. The Go API (`api/internal/models`)
+mirrors the same shape in Go structs with matching `json` tags, since Go
+can't import the TypeScript package directly — keep the two in sync when the
+schema changes.
+
 ```typescript
-// types/content.ts
+// shared/src/content.ts
 interface Project {
   id: string;
   slug: string;
@@ -577,8 +598,9 @@ api.mariamecoulibaly.com  →  backend API (if custom backend)
 
 | Service | Role | Est. cost |
 |---------|------|-----------|
-| **Vercel** (Hobby/Pro) | React SPA + serverless API | $0–20/mo |
-| **Supabase** (free tier) | Postgres + Auth + storage | $0–25/mo |
+| **Vercel/Netlify/Cloudflare Pages** | React SPA (`ui/`) static hosting | $0–20/mo |
+| **Fly.io** or **Railway** | Go API (`api/`) — compiles to a small static binary, deploys well as a container | $0–10/mo |
+| **Supabase** (free tier) | Postgres + migrations (CLI) + storage | $0–25/mo |
 | **Cloudflare** | DNS + CDN + R2 storage | $0–5/mo |
 | **Cloudinary** (optional) | Image transforms | $0–25/mo |
 
@@ -605,6 +627,11 @@ S3_SECRET_KEY=...
 ## 9. Data Model & Content Migration
 
 ### 9.1 Database schema (custom backend option)
+
+Schema lives as **Supabase CLI migrations** (`supabase/migrations/*.sql`); Go
+query code is generated from it with **sqlc** (`api/internal/db/query.sql` →
+generated structs/methods using `pgx/v5`). Not yet scaffolded — planned for
+Phase 2 (Section 10) alongside auth.
 
 ```sql
 -- projects
@@ -681,6 +708,8 @@ node scripts/migrate-from-squarespace.ts
 
 ### Phase 2 — Backend & auth (1–2 weeks)
 
+- [ ] Create Supabase project; scaffold `supabase/` CLI migrations for the schema in Section 9.1
+- [ ] Set up sqlc (`sqlc.yaml`, `query.sql`) generating against `pgx/v5`; wire `internal/db` into the API
 - [ ] Database + API routes for projects and about page
 - [ ] Admin authentication (magic link or OAuth)
 - [ ] Media upload pipeline
@@ -717,62 +746,122 @@ node scripts/migrate-from-squarespace.ts
 
 ## 11. Open Questions & Decisions
 
-| # | Question | Options | Recommendation |
-|---|----------|---------|----------------|
-| 1 | CMS or custom backend? | Sanity / custom API | **Custom API** if edit UX is priority; **Sanity** if speed-to-market |
-| 2 | Keep exact Squarespace animations? | Pixel-perfect / close enough | Close enough — match feel, not byte-identical CSS |
-| 3 | Video hosting | YouTube/Vimeo embeds / self-hosted | Keep existing embeds (YouTube/Vimeo) |
-| 4 | Who needs admin access? | Mariam only / Mariam + developer | Start with email allowlist of 1–2 people |
-| 5 | Domain registrar access? | Need credentials before DNS cutover | Confirm before Phase 4 |
-| 6 | URL slug changes? | Keep all / rename some | **Keep all existing slugs** |
-| 7 | RSS feed needed? | Yes / No | Defer to v1.1 unless actively used |
-| 8 | Free-form layout editing? | DnD reorder only / full page builder | **Reorder + inline edit only** — avoid page-builder complexity |
+| # | Question | Options | Decision |
+|---|----------|---------|----------|
+| 1 | CMS or custom backend? | Sanity / custom API | ✅ **Custom API** (Node/Express or Next.js API routes + Postgres) — full control over edit UX |
+| 2 | Keep exact Squarespace animations? | Pixel-perfect / close enough | ✅ **Pixel-perfect** — recreate fade/scale/hover animations as closely as possible, including timing/easing |
+| 3 | Video hosting | YouTube/Vimeo embeds / self-hosted | ✅ **Keep existing embeds** (YouTube/Vimeo) |
+| 4 | Who needs admin access? | Mariam only / Mariam + developer | ✅ **Email allowlist of 1–2 people** (Mariam + developer) |
+| 5 | Domain registrar access? | Need credentials before DNS cutover | ⚠️ **Unresolved** — registrar unknown; run a WHOIS/`dig`/`whois mariamecoulibaly.com` check and confirm login access before Phase 4 (DNS cutover) |
+| 6 | URL slug changes? | Keep all / rename some | ✅ **Keep all existing slugs** |
+| 7 | RSS feed needed? | Yes / No | ✅ **Defer to v1.1** unless actively used |
+| 8 | Free-form layout editing? | DnD reorder only / full page builder | ✅ **Reorder + inline edit only** — avoid page-builder complexity |
+
+**Note on #2 (pixel-perfect animations):** this raises effort in Section 5.4/6 — plan to closely inspect the live site's computed styles/timings (fade duration, scale factor, cursor-follow hover text behavior) during Phase 0 discovery rather than approximating.
+
+**Action item on #5 (domain registrar):** blocks Phase 4 (Migration & launch). Should be resolved during Phase 0.
 
 ---
 
 ## Appendix A — Project Inventory (from live site)
 
-| Title | Approx. date |
-|-------|--------------|
-| Resident Home | Jul 2026 |
-| Udacity Accenture | Jun 2026 |
-| Flying Upstream Podcast | Nov 2025 |
-| Future of the Bay — KQED Special | Sep 2025 |
-| Holi Celebration — Pyarful | Mar 2025 |
-| Founder Introduction — Pyarful | Mar 2025 |
-| Biodiversity and Climate Optimist at Heart — PG&E | Jan 2025 |
-| TechWomen — PG&E | Nov 2024 |
-| Saluting Branches — PG&E | Nov 2024 |
-| Beautification — PG&E | Sep 2024 |
-| Inside a No-Kill Animal Shelter — KQED | Sep 2024 |
-| Comrade is My Pronoun | Sep 2024 |
-| Things to Do at Dolores Park — KQED | Aug 2021 |
-| Chabot Fire Academy | Aug 2021 |
-| Gorast Droll | Jul 2021 |
-| City Surf Project | — |
+Exact titles, dates, and slugs, in the same reverse-chronological order the
+live site displays them (resolved from `sitemap.xml` + each project page's
+`<title>`, since Squarespace's auto-generated slugs for renamed projects
+don't match their titles). Seeded into `api/internal/api/projects.go` as
+`stubProjects`.
+
+| # | Title | Published | Slug (ours) |
+|---|-------|-----------|--------------|
+| 1 | Resident Home | 2026-07-22 | `residenthome` |
+| 2 | Udacity Accenture | 2026-06-13 | `udacity` |
+| 3 | Flying Upstream Podcast | 2025-11-13 | `flyingupstream` |
+| 4 | Future of the Bay- KQED Special | 2025-09-15 | `future-of-the-bay-kqed-special` |
+| 5 | Holi Celebration- Pyarful | 2025-03-21 | `holi-celebration-pyarful` |
+| 6 | Founder Introduction- Pyarful | 2025-03-21 | `founder-introduction-pyarful` |
+| 7 | Biodiversity and Climate Optimist at Heart- PG&E | 2025-03-18 | `biodiversitypge` |
+| 8 | TechWomen- PG&E | 2025-01-15 | `techwomen-pge` |
+| 9 | Saluting Branches- PG&E | 2024-11-04 | `salutingbranches` |
+| 10 | Beautification- PG&E | 2024-11-04 | `beautification-pge` |
+| 11 | Inside a No-Kill Animal Shelter- KQED | 2024-09-27 | `kqedanimalshelter` |
+| 12 | Comrade is My Pronoun | 2024-09-27 | `comrade-is-my-pronoun` |
+| 13 | Things to Do at Dolores Park This Summer- KQED | 2024-09-27 | `kqed` |
+| 14 | Chabot Fire Academy | 2021-08-05 | `chabotfireacademy` |
+| 15 | Gorast Droll | 2021-08-04 | `gorast-droll` |
+| 16 | City Surf Project | 2021-07-30 | `city-surf-project` |
+
+Slugs `residenthome`, `udacity`, `flyingupstream`, `biodiversitypge`,
+`salutingbranches`, `kqedanimalshelter`, `kqed`, and `chabotfireacademy` are
+copied verbatim from the live site (worth preserving as redirect targets at
+cutover — see Section 8). The rest had meaningless auto-generated slugs
+(e.g. `interview-collette-noll-99kld-c2f3z-sm3ed-pygw2-lcnl4-73rt7-dtyyx`)
+on the live site, so we generated clean kebab-case ones from their titles
+instead.
+
+Roles/summaries/thumbnails beyond `residenthome` are still `"Coming soon."`
+placeholders — Phase 2's content migration (Section 10) is what backfills
+the real copy, images, and video embeds from each project's detail page.
 
 ---
 
-## Appendix B — Quick reference commands
+## Appendix B — Design Tokens (from reference site)
+
+Reverse-engineered from the live site's compiled Squarespace CSS
+(`site.css`'s `--body-font-font-family`, `--heading-font-font-family`,
+`--accent-hsl`, `--black-hsl` custom properties) and applied in
+`ui/src/index.css` via Tailwind v4's `@theme`.
+
+| Token | Reference site value | Our implementation |
+|-------|----------------------|---------------------|
+| Body font | `Space Mono` (Google Font) | Loaded via Google Fonts `<link>` in `ui/index.html`; exact match |
+| Heading font | `"Gopher"` — a paid Adobe Fonts (Typekit) kit, domain-locked to the live site | **Not reusable.** Substituted `Space Grotesk` (free, Google Fonts) — same "Space" family as Space Mono, similar geometric/quirky character to Gopher's reverse-contrast geometric sans |
+| Text color | `hsl(0, 40%, 5.88%)` ≈ `#150909` (warm off-black) | `--color-ink` in `ui/src/index.css` |
+| Accent color | `hsl(19.04, 98.11%, 79.22%)` ≈ `#feb796` (soft peach/salmon) | `--color-accent` in `ui/src/index.css` (not yet applied anywhere — reserved for future hover/accent states) |
+| Background | white | white |
+
+If a real Adobe Fonts (Creative Cloud) subscription becomes available,
+swap the `Space Grotesk` `<link>` for the licensed Typekit kit `<script>`
+and update `--font-heading` in `ui/src/index.css` — no other changes needed.
+
+---
+
+## Appendix C — Quick reference commands
 
 ```bash
-# Install dependencies
+# Install JS dependencies (ui + shared)
 pnpm install
 
 # Local development
-pnpm dev
+pnpm dev:ui     # React app on http://localhost:5173
+pnpm dev:api    # Go API on http://localhost:4000
 
 # Production build
-pnpm build && pnpm preview
+pnpm build:ui   # ui/dist
+pnpm build:api  # api/bin/api
 
 # Check commit messages on the current branch
 pnpm lint:commits
 
-# Run migration script (after Phase 0)
+# Go: format, vet, lint, test (see api/Makefile)
+cd api && make fmt-check && make vet && make lint && make test
+
+# Go: cut a release (tags api/vX.Y.Z, built by .github/workflows/api-release.yml)
+git tag api/v1.0.0 && git push origin api/v1.0.0
+
+# Run content migration script (after Phase 0)
 pnpm migrate
 
-# Deploy (Vercel)
+# Deploy (Vercel for ui, Fly.io/Railway for the Go api)
 vercel --prod
+
+# --- Phase 2 (not yet scaffolded) ---
+# Supabase: local Postgres + new schema migration
+supabase start
+supabase migration new <name>
+supabase db push
+
+# sqlc: regenerate Go query code after editing schema/queries
+cd api && sqlc generate
 ```
 
 ---

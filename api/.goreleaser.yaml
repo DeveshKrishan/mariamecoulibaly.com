@@ -1,0 +1,56 @@
+version: 2
+
+project_name: api
+
+# NOTE: this is one Go module inside a larger monorepo (see repo root
+# README). GoReleaser's native `monorepo:` tag-prefix support is a Pro-only
+# feature, so instead we tag releases as `api/vX.Y.Z` and have the release
+# workflow strip the "api/" prefix into GORELEASER_CURRENT_TAG before
+# running `goreleaser release` from this directory. See:
+# https://goreleaser.com/resources/cookbooks/set-a-custom-git-tag/
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: api
+    main: ./cmd/api
+    binary: api
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: api
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+
+release:
+  github:
+    owner: DeveshKrishan
+    name: mariamecoulibaly.com
+  prerelease: auto

@@ -1,0 +1,57 @@
+name: UI Checks
+
+on:
+  pull_request:
+    paths:
+      - "ui/src/**"
+      - "ui/public/**"
+      - "ui/index.html"
+      - "ui/vite.config.ts"
+      - "ui/.oxlintrc.json"
+      - "shared/**"
+      - ".github/workflows/checks-ui.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "ui/src/**"
+      - "ui/public/**"
+      - "ui/index.html"
+      - "ui/vite.config.ts"
+      - "ui/.oxlintrc.json"
+      - "shared/**"
+      - ".github/workflows/checks-ui.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    name: Lint, test, and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm --filter ui lint
+
+      - name: Run UI tests
+        run: pnpm --filter ui test
+
+      - name: Build
+        run: pnpm --filter ui build

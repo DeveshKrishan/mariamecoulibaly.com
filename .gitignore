@@ -141,3 +141,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Go
+api/bin/
+api/app-config.yml
+api/dist/
+*.exe
+*.exe~
+*.test
+*.out

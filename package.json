@@ -8,6 +8,10 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "dev:ui": "pnpm --filter ui dev",
+    "dev:api": "cd api && go run ./cmd/api",
+    "build:ui": "pnpm --filter ui build",
+    "build:api": "cd api && go build -o bin/api ./cmd/api",
     "lint:commits": "commitlint --from origin/main --to HEAD --verbose"
   },
   "devDependencies": {
