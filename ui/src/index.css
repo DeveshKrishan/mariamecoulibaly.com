@@ -17,6 +17,8 @@
   --font-heading: 'Space Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --color-ink: #150909;
   --color-accent: #feb796;
+  /* Squarespace --darkAccent-hsl: 240, 55.4%, 29% — About Me hero */
+  --color-dark-accent: #202072;
 }
 
 body {

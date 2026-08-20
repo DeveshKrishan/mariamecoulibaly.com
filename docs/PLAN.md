@@ -817,7 +817,8 @@ Reverse-engineered from the live site's compiled Squarespace CSS
 | Body font | `Space Mono` (Google Font) | Loaded via Google Fonts `<link>` in `ui/index.html`; exact match |
 | Heading font | `"Gopher"` — a paid Adobe Fonts (Typekit) kit, domain-locked to the live site | **Not reusable.** Substituted `Space Grotesk` (free, Google Fonts) — same "Space" family as Space Mono, similar geometric/quirky character to Gopher's reverse-contrast geometric sans |
 | Text color | `hsl(0, 40%, 5.88%)` ≈ `#150909` (warm off-black) | `--color-ink` in `ui/src/index.css` |
-| Accent color | `hsl(19.04, 98.11%, 79.22%)` ≈ `#feb796` (soft peach/salmon) | `--color-accent` in `ui/src/index.css` (not yet applied anywhere — reserved for future hover/accent states) |
+| Accent color | `hsl(19.04, 98.11%, 79.22%)` ≈ `#feb796` (soft peach/salmon) | `--color-accent` in `ui/src/index.css` (reserved for future hover/accent states) |
+| Dark accent | `hsl(240, 55.4%, 29%)` ≈ `#202072` (navy — About Me hero) | `--color-dark-accent` in `ui/src/index.css`; applied to the About hero section |
 | Background | white | white |
 
 If a real Adobe Fonts (Creative Cloud) subscription becomes available,
