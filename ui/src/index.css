@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens reverse-engineered from the reference site
+ * (mariamecoulibaly.com, a Squarespace site) — see docs/PLAN.md.
+ *
+ * - font-mono ("Space Mono") is the site's exact body font.
+ * - font-heading ("Space Grotesk") stands in for the site's "Gopher"
+ *   heading font, a paid Adobe Fonts kit we can't reuse on our domain.
+ * - color-ink / color-accent come from the site's compiled CSS variables
+ *   (--black-hsl and --accent-hsl), converted to hex.
+ */
+@theme {
+  --font-mono: 'Space Mono', ui-monospace, Consolas, monospace;
+  --font-heading: 'Space Grotesk', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --color-ink: #150909;
+  --color-accent: #feb796;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--color-ink);
+  background: #fff;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+}
+
+a {
+  color: inherit;
+}

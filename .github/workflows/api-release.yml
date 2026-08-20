@@ -1,0 +1,51 @@
+name: API Release
+
+# Tag releases as `api/vX.Y.Z` to avoid clashing with any future ui releases
+# in this monorepo, e.g.:
+#   git tag api/v1.0.0 && git push origin api/v1.0.0
+#
+# GoReleaser's native monorepo tag-prefix support is GoReleaser Pro only, so
+# we strip the "api/" prefix into GORELEASER_CURRENT_TAG ourselves.
+# See: https://goreleaser.com/resources/cookbooks/set-a-custom-git-tag/
+
+on:
+  push:
+    tags:
+      - "api/v*"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: api
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - name: Derive release tag
+        run: echo "GORELEASER_CURRENT_TAG=${GITHUB_REF_NAME#api/}" >> "$GITHUB_ENV"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          workdir: api
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: ${{ env.GORELEASER_CURRENT_TAG }}

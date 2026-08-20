@@ -1,0 +1,60 @@
+name: API Checks
+
+on:
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/checks-api.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "api/**"
+      - ".github/workflows/checks-api.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: api
+
+jobs:
+  api:
+    name: Format, vet, lint, test, and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+
+      - name: Check formatting
+        run: make fmt-check
+
+      - name: Vet
+        run: make vet
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          working-directory: api
+
+      - name: Run API tests
+        run: make test
+
+      - name: Build
+        run: make build
+
+      - name: GoReleaser config check
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          workdir: api
+          distribution: goreleaser
+          version: latest
+          args: check
