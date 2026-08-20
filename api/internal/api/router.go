@@ -5,20 +5,23 @@ package api
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/config"
 )
 
 // NewRouter builds the HTTP handler for the API, wiring routes and
 // CORS middleware according to the given configuration.
 func NewRouter(cfg *config.Config) http.Handler {
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
+	r.Use(withCORS(cfg.CORSOrigin))
 
-	mux.HandleFunc("GET /health", handleHealth)
-	mux.HandleFunc("GET /api/projects", handleListProjects)
-	mux.HandleFunc("GET /api/projects/{slug}", handleGetProject)
-	mux.HandleFunc("GET /api/pages/about", handleGetAboutPage)
+	r.Get("/health", handleHealth)
+	r.Get("/api/projects", handleListProjects)
+	r.Get("/api/projects/{slug}", handleGetProject)
+	r.Get("/api/pages/about", handleGetAboutPage)
 
-	return withCORS(cfg.CORSOrigin)(mux)
+	return r
 }
 
 func handleHealth(w http.ResponseWriter, _ *http.Request) {

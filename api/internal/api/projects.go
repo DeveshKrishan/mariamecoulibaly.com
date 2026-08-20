@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/models"
 )
 
@@ -88,7 +90,7 @@ func handleListProjects(w http.ResponseWriter, _ *http.Request) {
 }
 
 func handleGetProject(w http.ResponseWriter, r *http.Request) {
-	slug := r.PathValue("slug")
+	slug := chi.URLParam(r, "slug")
 
 	for _, project := range stubProjects {
 		if project.Slug == slug {

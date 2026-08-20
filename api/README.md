@@ -27,6 +27,7 @@ environment variables. See `internal/config/app-config.go`.
 | `API_ENV` | `env` | `development` | Runtime environment |
 | `API_PORT` | `port` | `4000` | HTTP listen port |
 | `API_CORS_ORIGIN` | `cors_origin` | `http://localhost:5173` | Allowed origin for browser requests from `ui` |
+| `PORT` | `port` (override) | — | Unprefixed port assigned by PaaS hosts (Vercel, Railway, Render, Fly). Takes precedence over `API_PORT` when set. |
 
 Copy [`app-config.example.yml`](./app-config.example.yml) to `app-config.yml`
 (gitignored) to override defaults locally without env vars, or set
@@ -62,6 +63,27 @@ pnpm build:api                                  # from repo root
 # or
 make build                                      # from api/, -> bin/api
 ```
+
+## Deployment
+
+Deployed with Vercel's [Go Framework Preset](https://vercel.com/docs/functions/runtimes/go),
+which runs `cmd/api/main.go` as a standalone server (not serverless
+functions) — no Dockerfile needed. Routing uses [chi](https://github.com/go-chi/chi)
+instead of the stdlib `ServeMux`, since chi is one of the frameworks the
+preset explicitly supports.
+
+1. In the Vercel dashboard, create a **new project** from this repo with:
+   - **Root Directory:** `api`
+   - **Framework Preset:** Go (auto-detected via `api/vercel.json`'s
+     `"framework": "go"`, since it finds `go.mod` + `cmd/api/main.go`)
+2. Set environment variables on the API project:
+   - `API_CORS_ORIGIN` = the deployed `ui` origin, e.g. `https://mariamecoulibaly.vercel.app`
+   - `API_ENV=production` (optional)
+   - Vercel sets `PORT` automatically — the server honors it (see
+     Configuration table above); don't set `API_PORT` in production.
+3. Deploy. Note the resulting URL (e.g. `https://mariame-api.vercel.app`).
+4. On the `ui` Vercel project, set `VITE_API_URL` to that URL and redeploy
+   the frontend so it points at the live API instead of `localhost:4000`.
 
 ## Tooling
 
