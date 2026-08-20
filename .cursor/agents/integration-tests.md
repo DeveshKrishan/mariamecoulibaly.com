@@ -1,6 +1,6 @@
 ---
 name: integration-tests
-description: Runs the full test suite for both the ui (vitest) and api (go test) workspaces and reports pass/fail. Use proactively after any feature or bug fix, and always before considering work done — never skip running tests.
+description: Runs the full test suite for both the ui (vitest) and api (go test) workspaces and reports pass/fail. Use proactively after any feature or bug fix; runs in parallel with formatter and linter — never skip running tests.
 model: inherit
 readonly: true
 ---

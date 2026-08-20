@@ -42,8 +42,8 @@ don't assume they pass:
 
 Run both, not just the workspace you think you touched, and report the real
 pass/fail results. Use the `develop` subagent (`.cursor/agents/develop.md`)
-for the full implement → format → lint → test → review flow, triggered by
-"start work on ...".
+for the full implement → parallel verify (format + lint + test) → review
+flow, triggered by "start work on ...".
 
 ## Always reference the original site for design
 

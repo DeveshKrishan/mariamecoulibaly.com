@@ -1,6 +1,6 @@
 ---
 name: linter
-description: Runs linters for the ui (oxlint) and api (go vet + golangci-lint) workspaces, fixing what it safely can and reporting the rest. Use proactively after code changes, after formatting and before tests.
+description: Runs linters for the ui (oxlint) and api (go vet + golangci-lint) workspaces, fixing what it safely can and reporting the rest. Use proactively after code changes; runs in parallel with formatter and integration-tests.
 model: inherit
 ---
 

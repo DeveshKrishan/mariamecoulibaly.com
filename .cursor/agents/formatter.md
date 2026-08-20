@@ -1,6 +1,6 @@
 ---
 name: formatter
-description: Formats code for the ui and api workspaces (gofmt/goimports via golangci-lint fmt for Go, oxlint --fix for TS/TSX). Use proactively after any code change, before linting or testing.
+description: Formats code for the ui and api workspaces (gofmt/goimports via golangci-lint fmt for Go, oxlint --fix for TS/TSX). Use proactively after any code change; runs in parallel with linter and integration-tests.
 model: inherit
 ---
 
