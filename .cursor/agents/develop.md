@@ -20,7 +20,7 @@ Activate on phrases like "start work on <thing>". Treat whatever follows as the 
 2. **Implement** — Make the code changes yourself (do not delegate implementation to a subagent).
 3. **Format** — Delegate to the `formatter` subagent.
 4. **Lint** — Delegate to the `linter` subagent. If it reports issues it couldn't fix, address them yourself, then re-run it.
-5. **Test** — Delegate to the `test-runner` subagent. All tests (ui + api) must pass — never skip this step or declare the task done with red or skipped tests. If tests fail, fix the code and re-run steps 3–5 until green.
+5. **Test** — Delegate to the `integration-tests` subagent. All tests (ui + api) must pass — never skip this step or declare the task done with red or skipped tests. If tests fail, fix the code and re-run steps 3–5 until green.
 6. **Review** — Delegate to the `code-reviewer` subagent. If it reports blocking issues, fix them and re-run steps 3–6.
 7. **Wrap up** — Once format, lint, tests, and review are all clean, summarize what changed. If the change is large, remind the user to split it into stacked PRs (use the `split-to-prs` skill) per the workflow-tips rule.
 
