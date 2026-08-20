@@ -13,6 +13,13 @@ export function AboutPage() {
 
   return (
     <div className="max-w-2xl">
+      {page.photoUrl ? (
+        <img
+          src={page.photoUrl}
+          alt="Mariam Coulibaly"
+          className="w-48 mb-6 object-cover"
+        />
+      ) : null}
       <h1 className="text-3xl mb-4">{page.headline}</h1>
       <p className="mb-8">{page.bio}</p>
       <h2 className="text-sm uppercase tracking-wide mb-2">My Links</h2>
