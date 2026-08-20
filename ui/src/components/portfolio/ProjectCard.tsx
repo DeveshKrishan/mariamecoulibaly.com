@@ -1,16 +1,7 @@
 import type { Project } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-
-// Matches the reference site's index list date format, e.g. "7/22/26".
-// Parses the "YYYY-MM-DD" parts directly (rather than `new Date(isoDate)`)
-// to avoid UTC-vs-local timezone shifts rolling the date back a day.
-function formatShortDate(isoDate: string): string {
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
-  if (!match) return isoDate;
-  const [, year, month, day] = match;
-  return `${Number(month)}/${Number(day)}/${year.slice(-2)}`;
-}
+import { formatShortDate } from '../../lib/dates';
 
 export function ProjectCard({ project }: { project: Project }) {
   return (

@@ -9,6 +9,7 @@ const project: Project = {
   slug: 'my-project',
   title: 'My Project',
   publishedAt: '2026-01-01',
+  client: 'Example Client',
   role: 'Designer',
   summary: 'A summary',
   body: [],

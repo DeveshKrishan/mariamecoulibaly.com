@@ -1,0 +1,119 @@
+import type { Project, RichTextBlock } from '@mariame/shared';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it } from 'vitest';
+import { ProjectBody } from './ProjectBody';
+import { ProjectDetail } from './ProjectDetail';
+
+const baseProject: Project = {
+  id: '1',
+  slug: 'residenthome',
+  title: 'Resident Home',
+  publishedAt: '2026-07-22',
+  client: 'Resident Home/Nectar',
+  role: 'Assistant Editor — Freelance',
+  summary: 'Organized footage and re-cut Amazon advertisements',
+  body: [
+    {
+      type: 'paragraph',
+      text: 'Resident Home is a house of direct-to-consumer sleep brands.',
+    },
+  ],
+  thumbnailUrl: '/images/projects/residenthome.jpg',
+  sortOrder: 0,
+  status: 'published',
+};
+
+const nextProject: Project = {
+  ...baseProject,
+  id: '2',
+  slug: 'udacity',
+  title: 'Udacity Accenture',
+  sortOrder: 1,
+};
+
+describe('ProjectBody', () => {
+  it('renders paragraph, image, embed, and link blocks', () => {
+    const body: RichTextBlock[] = [
+      { type: 'paragraph', text: 'Hello body' },
+      { type: 'image', url: '/img.jpg', alt: 'Still' },
+      { type: 'embed', url: 'https://youtu.be/eq6bDsFdjnA', provider: 'youtube' },
+      { type: 'link', url: 'https://example.com/watch', label: 'Watch' },
+    ];
+
+    render(<ProjectBody body={body} />);
+
+    expect(screen.getByText('Hello body')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Still' })).toHaveAttribute(
+      'src',
+      '/img.jpg',
+    );
+    expect(screen.getByTitle('Embedded media')).toHaveAttribute(
+      'src',
+      'https://www.youtube.com/embed/eq6bDsFdjnA',
+    );
+    expect(screen.getByRole('link', { name: 'Watch' })).toHaveAttribute(
+      'href',
+      'https://example.com/watch',
+    );
+  });
+
+  it('renders nothing for an empty body', () => {
+    const { container } = render(<ProjectBody body={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('ProjectDetail', () => {
+  it('renders title, date, meta lines, body, and next project link', () => {
+    render(
+      <MemoryRouter>
+        <ProjectDetail
+          project={baseProject}
+          previous={null}
+          next={nextProject}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Resident Home' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Jul 22')).toBeInTheDocument();
+    expect(screen.getByText('Resident Home/Nectar')).toBeInTheDocument();
+    expect(
+      screen.getByText('Assistant Editor — Freelance'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Organized footage and re-cut Amazon advertisements'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Resident Home is a house of direct-to-consumer sleep brands.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /Udacity Accenture/i }),
+    ).toHaveAttribute('href', '/projects/udacity');
+  });
+
+  it('hides placeholder Coming soon meta lines', () => {
+    render(
+      <MemoryRouter>
+        <ProjectDetail
+          project={{
+            ...baseProject,
+            client: '',
+            role: 'Coming soon.',
+            summary: 'Coming soon.',
+            body: [],
+          }}
+          previous={null}
+          next={null}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('Coming soon.')).not.toBeInTheDocument();
+  });
+});
