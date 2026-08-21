@@ -29,6 +29,8 @@ file → environment variables. See `internal/config/app-config.go`.
 | `API_CORS_ORIGIN` | `cors_origin` | `http://localhost:5173` | Allowed origin for browser requests from `ui` |
 | `API_DATABASE_URL` | `database_url` | _(empty)_ | Postgres connection string. When unset, the API serves in-memory stub content. |
 | `DATABASE_URL` | `database_url` (fallback) | — | Unprefixed Supabase/PaaS URL used only when `API_DATABASE_URL` is empty. |
+| `API_SUPABASE_URL` | `supabase_url` | _(empty)_ | Supabase project URL for JWKS JWT verification (e.g. `https://<ref>.supabase.co`). Required with `API_ADMIN_EMAILS` to enable admin routes. |
+| `API_ADMIN_EMAILS` | _(parsed)_ | _(empty)_ | Comma-separated allowlist of admin emails (case-insensitive). |
 | `PORT` | `port` (override) | — | Unprefixed port assigned by PaaS hosts (Vercel, Railway, Render, Fly). Takes precedence over `API_PORT` when set. |
 
 Create `config/app-config.yml` (gitignored) with any of the keys above to
@@ -44,17 +46,36 @@ over the file.
 
 ## Endpoints
 
+### Public
+
 | Method | Path | Description |
 |--------|------|--------------|
 | `GET` | `/health` | Health check |
-| `GET` | `/api/projects` | List all projects |
-| `GET` | `/api/projects/{slug}` | Get a single project |
+| `GET` | `/api/projects` | List published projects |
+| `GET` | `/api/projects/{slug}` | Get a published project |
 | `GET` | `/api/pages/about` | Get the About Me page content |
 
-With no database URL configured, handlers serve the Phase 1 in-memory stubs
-in `internal/store`. With `API_DATABASE_URL` set (after migrations + seed),
-handlers read from Postgres via sqlc (`internal/db`). Auth / edit-mode writes
-are still Phase 2 follow-ups — see `docs/PLAN.md` Section 10.
+### Admin (Bearer Supabase access token + allowlisted email)
+
+| Method | Path | Description |
+|--------|------|--------------|
+| `GET` | `/api/admin/me` | Current admin identity |
+| `GET` | `/api/admin/projects` | List non-deleted projects (draft + published) |
+| `GET` | `/api/admin/projects/{slug}` | Get a non-deleted project |
+| `POST` | `/api/projects` | Create a project |
+| `PATCH` | `/api/projects/{slug}` | Update a project |
+| `DELETE` | `/api/projects/{slug}` | Soft-delete a project |
+| `PUT` | `/api/projects/reorder` | Reorder by `{ "slugs": [...] }` |
+| `PUT` | `/api/pages/about` | Replace About Me content |
+
+Auth: UI signs in with **Google via Supabase Auth**; the Go API verifies the
+JWT locally against the project's JWKS
+(`{API_SUPABASE_URL}/auth/v1/.well-known/jwks.json`) and checks
+`API_ADMIN_EMAILS`. Do **not** put the legacy JWT secret on the API.
+
+With no database URL configured, public handlers serve Phase 1 in-memory
+stubs. Admin writes require Postgres (`API_DATABASE_URL`) and return 503
+otherwise.
 
 ## Database (Phase 2)
 
@@ -108,7 +129,8 @@ cmd/api/main.go       # HTTP server entrypoint
 cmd/seed/main.go      # upsert stub content into Postgres
 config/               # app-config.yml (gitignored, optional local overrides)
 sqlc.yaml             # sqlc config (schema = supabase/migrations)
-internal/api/         # HTTP handlers, router, CORS middleware
+internal/api/         # HTTP handlers, router, CORS + admin auth middleware
+internal/auth/        # Supabase JWKS JWT verification + allowlist
 internal/config/      # koanf-based config loading
 internal/db/          # sqlc-generated queries (pgx/v5)
 internal/models/      # Project, AboutPage structs (mirror shared/)
@@ -137,15 +159,20 @@ preset explicitly supports.
      `"framework": "go"`, since it finds `go.mod` + `cmd/api/main.go`)
 2. Set environment variables on the API project:
    - `API_CORS_ORIGIN` = the deployed `ui` origin, e.g. `https://mariamecoulibaly.vercel.app`
-   - `API_DATABASE_URL` = Supabase (or other Postgres) connection string once
-     migrations are applied and content is seeded (optional until then —
-     stubs are used when unset)
+   - `API_DATABASE_URL` = Supabase **session pooler** URL (IPv4). Prefer
+     `postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require`
+     over the direct `db.<ref>.supabase.co` host (often IPv6-only on Vercel).
+   - `API_SUPABASE_URL` = `https://<ref>.supabase.co`
+   - `API_ADMIN_EMAILS` = comma-separated admin emails
    - `API_ENV=production` (optional)
    - Vercel sets `PORT` automatically — the server honors it (see
      Configuration table above); don't set `API_PORT` in production.
-3. Deploy. Note the resulting URL (e.g. `https://mariame-api.vercel.app`).
-4. On the `ui` Vercel project, set `VITE_API_URL` to that URL and redeploy
-   the frontend so it points at the live API instead of `localhost:4000`.
+3. In Supabase: Authentication → Providers → enable **Google**, and add
+   redirect URLs for the UI (`http://localhost:5173/**` and production
+   `https://…vercel.app/**`).
+4. Deploy the API. Note the resulting URL.
+5. On the `ui` Vercel project, set `VITE_API_URL`, `VITE_SUPABASE_URL`, and
+   `VITE_SUPABASE_ANON_KEY`, then redeploy. Sign in at `/admin/login`.
 
 ## Tooling
 

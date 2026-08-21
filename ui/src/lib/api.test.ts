@@ -1,6 +1,6 @@
 import type { AboutPage, Project } from '@mariame/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getAboutPage, getProject, getProjects } from './api';
+import { getAboutPage, getAdminMe, getProject, getProjects } from './api';
 
 // No VITE_API_URL is set for tests, so api.ts falls back to this default.
 const API_URL = 'http://localhost:4000';
@@ -26,7 +26,7 @@ describe('api client', () => {
 
     const result = await getProjects();
 
-    expect(fetch).toHaveBeenCalledWith(`${API_URL}/api/projects`);
+    expect(fetch).toHaveBeenCalledWith(`${API_URL}/api/projects`, expect.any(Object));
     expect(result).toEqual(projects);
   });
 
@@ -36,7 +36,10 @@ describe('api client', () => {
 
     const result = await getProject('my-project');
 
-    expect(fetch).toHaveBeenCalledWith(`${API_URL}/api/projects/my-project`);
+    expect(fetch).toHaveBeenCalledWith(
+      `${API_URL}/api/projects/my-project`,
+      expect.any(Object),
+    );
     expect(result).toEqual(project);
   });
 
@@ -46,8 +49,28 @@ describe('api client', () => {
 
     const result = await getAboutPage();
 
-    expect(fetch).toHaveBeenCalledWith(`${API_URL}/api/pages/about`);
+    expect(fetch).toHaveBeenCalledWith(
+      `${API_URL}/api/pages/about`,
+      expect.any(Object),
+    );
     expect(result).toEqual(about);
+  });
+
+  it('getAdminMe sends Authorization bearer token', async () => {
+    mockFetchOnce({ email: 'a@b.com', displayName: 'A' });
+
+    const result = await getAdminMe('tok');
+
+    expect(fetch).toHaveBeenCalledWith(
+      `${API_URL}/api/admin/me`,
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      }),
+    );
+    const call = vi.mocked(fetch).mock.calls[0];
+    const headers = (call[1] as RequestInit).headers as Headers;
+    expect(headers.get('Authorization')).toBe('Bearer tok');
+    expect(result.email).toBe('a@b.com');
   });
 
   it('throws when the response is not ok', async () => {

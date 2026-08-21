@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/api"
+	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/auth"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/config"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/store"
 )
@@ -45,7 +46,12 @@ func run() error {
 	}
 	defer cleanup()
 
-	handler := api.NewRouter(cfg, content)
+	verifier, err := openAuth(cfg)
+	if err != nil {
+		return fmt.Errorf("opening admin auth: %w", err)
+	}
+
+	handler := api.NewRouter(cfg, content, verifier)
 	addr := fmt.Sprintf(":%d", cfg.Port)
 
 	log.Printf("api %s (%s, built %s) [%s] listening on http://localhost%s", version, commit, date, cfg.Env, addr)
@@ -53,6 +59,19 @@ func run() error {
 		return err
 	}
 	return nil
+}
+
+func openAuth(cfg *config.Config) (auth.Verifier, error) {
+	if cfg.SupabaseURL == "" || len(cfg.AdminEmails) == 0 {
+		log.Printf("admin auth: disabled (set API_SUPABASE_URL and API_ADMIN_EMAILS to enable write routes)")
+		return nil, nil
+	}
+	v, err := auth.NewJWKSVerifier(cfg.SupabaseURL, cfg.AdminEmails)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("admin auth: JWKS verifier enabled (%d allowlisted email(s))", len(cfg.AdminEmails))
+	return v, nil
 }
 
 func openStore(ctx context.Context, databaseURL string) (store.Store, func(), error) {

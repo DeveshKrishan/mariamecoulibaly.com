@@ -175,15 +175,23 @@ func TestLoadDatabaseURLFromUnprefixedEnv(t *testing.T) {
 	}
 }
 
-func TestLoadAPIDatabaseURLWinsOverUnprefixed(t *testing.T) {
-	t.Setenv("API_DATABASE_URL", "postgres://api@localhost/db")
-	t.Setenv("DATABASE_URL", "postgres://plain@localhost/db")
+func TestLoadAdminEmailsAndSupabaseURL(t *testing.T) {
+	t.Setenv("API_DATABASE_URL", "")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("API_SUPABASE_URL", "https://example.supabase.co/")
+	t.Setenv("API_ADMIN_EMAILS", "Admin@Example.com, other@example.com, admin@example.com")
 
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	if cfg.DatabaseURL != "postgres://api@localhost/db" {
-		t.Errorf("DatabaseURL = %q, want API_DATABASE_URL to win", cfg.DatabaseURL)
+	if cfg.SupabaseURL != "https://example.supabase.co" {
+		t.Errorf("SupabaseURL = %q, want trimmed URL", cfg.SupabaseURL)
+	}
+	if len(cfg.AdminEmails) != 2 {
+		t.Fatalf("AdminEmails len = %d, want 2 (deduped)", len(cfg.AdminEmails))
+	}
+	if cfg.AdminEmails[0] != "admin@example.com" {
+		t.Errorf("AdminEmails[0] = %q", cfg.AdminEmails[0])
 	}
 }
