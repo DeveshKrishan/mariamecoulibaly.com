@@ -4,11 +4,15 @@ import { NavLink, useLocation } from 'react-router-dom';
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `hover:underline ${isActive ? 'underline' : ''}`;
 
+/** Near-top band where the header must stay visible (Squarespace uses ~10px). */
+const TOP_SHOW_Y = 10;
+
 /**
  * Site header matching the reference Squarespace chrome:
  * - fixed + transparent at the top of the page
  * - solid white after scroll
- * - “scroll back”: hide while scrolling down, show while scrolling up
+ * - “scroll back”: hide while scrolling down (only after leaving the top),
+ *   show while scrolling up — never hide while still near the top
  * - desktop inline nav; mobile two-line hamburger → full-screen overlay
  * - inverse (light) text when sitting over the About dark hero
  */
@@ -18,32 +22,54 @@ export function Header() {
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPathname, setMenuPathname] = useState(pathname);
-  const lastY = useRef(0);
+  const lastY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
 
-  // Close the mobile menu when the route changes (adjust state during render).
+  // Close the mobile menu and un-hide the bar when the route changes
+  // (adjust state during render). SPA navigations often reset scroll to
+  // the top without firing a scroll event, which previously left the bar
+  // stuck hidden on mobile.
   if (pathname !== menuPathname) {
     setMenuPathname(pathname);
     setMenuOpen(false);
+    setHidden(false);
+    if (typeof window !== 'undefined') {
+      // scrolled is derived from scroll position; sync it here too so the
+      // solid/transparent chrome matches the new page immediately.
+      setScrolled(window.scrollY > 8);
+    }
   }
 
   const overDarkHero = pathname === '/about-me' && !scrolled && !menuOpen;
 
   useEffect(() => {
-    const onScroll = () => {
+    const syncFromScroll = () => {
       const y = window.scrollY;
       setScrolled(y > 8);
-      if (y > lastY.current && y > 64) {
+
+      // Always show near the top — matches Squarespace scroll-back, which
+      // never hides until scrollY > 10. Also covers scroll restoration that
+      // jumps to 0 without a directional scroll event.
+      if (y <= TOP_SHOW_Y) {
+        setHidden(false);
+      } else if (y > lastY.current) {
         setHidden(true);
-      } else {
+      } else if (y < lastY.current) {
         setHidden(false);
       }
+
       lastY.current = y;
     };
 
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    syncFromScroll();
+    window.addEventListener('scroll', syncFromScroll, { passive: true });
+    return () => window.removeEventListener('scroll', syncFromScroll);
   }, []);
+
+  // Keep the scroll cursor aligned after navigations so the next downward
+  // scroll is measured from the new page position.
+  useEffect(() => {
+    lastY.current = window.scrollY;
+  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
