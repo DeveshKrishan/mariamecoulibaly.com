@@ -1,12 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '../../lib/auth';
+import { EditModeProvider } from '../../lib/editMode';
 import { Header } from './Header';
+
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: false,
+  supabase: null,
+}));
 
 function renderHeader(path = '/') {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Header />
+      <AuthProvider>
+        <EditModeProvider>
+          <Header />
+        </EditModeProvider>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -55,7 +66,6 @@ describe('Header', () => {
 
     const header = container.querySelector('header');
     const overlay = container.querySelector('#mobile-nav');
-    // No transform while open so the fixed overlay covers the viewport.
     expect(header?.className).not.toMatch(/translate-y/);
     expect(overlay?.className).toContain('bg-white');
     expect(overlay?.className).toContain('fixed');
@@ -85,37 +95,27 @@ describe('Header', () => {
     const { container } = renderHeader();
     const header = container.querySelector('header');
 
-    // Still near the top — must remain visible (matches Squarespace ~10px).
     setScrollY(8);
     expect(header?.className).not.toMatch(/-translate-y-full/);
 
-    // Scroll down past the band — hide.
     setScrollY(80);
     expect(header?.className).toMatch(/-translate-y-full/);
 
-    // Scroll up — show again.
     setScrollY(40);
     expect(header?.className).not.toMatch(/-translate-y-full/);
 
-    // Return to the top — always show.
     setScrollY(0);
     expect(header?.className).not.toMatch(/-translate-y-full/);
   });
 
   it('shows again on route change even if it was hidden from prior scroll', () => {
-    const { container } = render(
-      <MemoryRouter initialEntries={['/']}>
-        <Header />
-      </MemoryRouter>,
-    );
+    const { container } = renderHeader('/');
 
     setScrollY(120);
     expect(container.querySelector('header')?.className).toMatch(
       /-translate-y-full/,
     );
 
-    // SPA navigations often reset scroll to 0 without firing scroll — the
-    // header must un-hide via the pathname effect (mobile stuck-hidden bug).
     Object.defineProperty(window, 'scrollY', {
       configurable: true,
       writable: true,
@@ -126,5 +126,10 @@ describe('Header', () => {
     expect(container.querySelector('header')?.className).not.toMatch(
       /-translate-y-full/,
     );
+  });
+
+  it('does not show Edit when the visitor is not an admin', () => {
+    renderHeader();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
   });
 });

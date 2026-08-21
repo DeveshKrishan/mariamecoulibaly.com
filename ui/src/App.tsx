@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/react';
 import { Route, Routes } from 'react-router-dom';
+import { EditToolbar } from './components/edit/EditToolbar';
 import { PageLayout } from './components/layout/PageLayout';
 import { AboutPage } from './pages/AboutPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
@@ -15,6 +16,7 @@ function App() {
         <Route path="/projects/:slug" element={<ProjectPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
       </Routes>
+      <EditToolbar />
       <Analytics />
     </PageLayout>
   );

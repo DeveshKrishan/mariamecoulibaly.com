@@ -29,6 +29,14 @@ func TestParsePublishedAt(t *testing.T) {
 	if err != nil || empty.Valid {
 		t.Fatalf("parsePublishedAt(\"\") = %+v, err=%v", empty, err)
 	}
+
+	iso, err := parsePublishedAt("2026-08-21T20:30:51.936Z")
+	if err != nil {
+		t.Fatalf("parsePublishedAt(RFC3339Nano) error = %v", err)
+	}
+	if !iso.Valid || iso.Time.Format("2006-01-02") != "2026-08-21" {
+		t.Errorf("parsed ISO = %+v", iso)
+	}
 }
 
 func TestUUIDString(t *testing.T) {

@@ -1,8 +1,15 @@
 import type { Project } from '@mariame/shared';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '../../lib/auth';
+import { EditModeProvider } from '../../lib/editMode';
 import { ProjectCard } from './ProjectCard';
+
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: false,
+  supabase: null,
+}));
 
 const project: Project = {
   id: '1',
@@ -21,7 +28,11 @@ const project: Project = {
 function renderCard(p: Project) {
   return render(
     <MemoryRouter>
-      <ProjectCard project={p} />
+      <AuthProvider>
+        <EditModeProvider>
+          <ProjectCard project={p} />
+        </EditModeProvider>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { Session } from '@supabase/supabase-js';
+import { ApiError, getAdminMe, type AdminMe } from './api';
 import { isSupabaseConfigured, supabase } from './supabase';
 
 type AuthContextValue = {
@@ -15,6 +16,9 @@ type AuthContextValue = {
   accessToken: string | null;
   loading: boolean;
   configured: boolean;
+  isAdmin: boolean;
+  admin: AdminMe | null;
+  adminLoading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -24,6 +28,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [admin, setAdmin] = useState<AdminMe | null>(null);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -50,6 +56,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const token = session?.access_token;
+    if (!token) {
+      setAdmin(null);
+      setAdminLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setAdminLoading(true);
+    getAdminMe(token)
+      .then((me) => {
+        if (!cancelled) setAdmin(me);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setAdmin(null);
+          if (!(err instanceof ApiError && (err.status === 401 || err.status === 403))) {
+            console.error(err);
+          }
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAdminLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.access_token]);
+
   const signInWithGoogle = useCallback(async () => {
     if (!supabase) {
       throw new Error('Supabase is not configured');
@@ -72,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw error;
     }
+    setAdmin(null);
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -80,10 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accessToken: session?.access_token ?? null,
       loading,
       configured: isSupabaseConfigured,
+      isAdmin: Boolean(admin),
+      admin,
+      adminLoading,
       signInWithGoogle,
       signOut,
     }),
-    [session, loading, signInWithGoogle, signOut],
+    [session, loading, admin, adminLoading, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,22 +1,20 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { EditableField } from '../edit/EditableField';
+import {
+  deleteProject,
+  projectToWritePayload,
+  updateProject,
+} from '../../lib/api';
+import { useAuth } from '../../lib/auth';
 import { formatDetailDate } from '../../lib/dates';
+import { useEditMode } from '../../lib/editMode';
 import { absoluteUrl } from '../../lib/site';
 import { hasContent, truncate } from '../../lib/text';
 import { Seo } from '../seo/Seo';
 import { ProjectBlock, ProjectBody } from './ProjectBody';
 import { ProjectPagination } from './ProjectPagination';
-
-function MetaLine({
-  children,
-  className,
-}: {
-  children: string;
-  className?: string;
-}) {
-  if (!hasContent(children)) return null;
-  return <p className={className ? `mb-1 ${className}` : 'mb-1'}>{children}</p>;
-}
 
 function isLeadingMedia(
   block: RichTextBlock | undefined,
@@ -43,17 +41,55 @@ function splitLeadingMedia(body: RichTextBlock[]): {
  */
 export function ProjectDetail({
   project,
+  onProjectChange,
   previous,
   next,
 }: {
   project: Project;
+  onProjectChange?: (next: Project) => void;
   previous: Project | null;
   next: Project | null;
 }) {
+  const { accessToken } = useAuth();
+  const { editMode, runSave } = useEditMode();
+  const navigate = useNavigate();
   const { media, rest } = splitLeadingMedia(project.body);
   const description = hasContent(project.summary)
     ? truncate(project.summary, 160)
     : `${project.title}, a project by Mariam Coulibaly.`;
+
+  async function saveField<K extends keyof Project>(
+    key: K,
+    value: Project[K],
+  ) {
+    if (!accessToken || !onProjectChange) return;
+    const previous = project;
+    const optimistic = { ...project, [key]: value };
+    onProjectChange(optimistic);
+    try {
+      const updated = await runSave(() =>
+        updateProject(
+          project.slug,
+          projectToWritePayload(optimistic),
+          accessToken,
+        ),
+      );
+      onProjectChange(updated);
+    } catch {
+      onProjectChange(previous);
+    }
+  }
+
+  async function handleDelete() {
+    if (!accessToken) return;
+    if (!window.confirm(`Soft-delete project “${project.slug}”?`)) return;
+    try {
+      await runSave(() => deleteProject(project.slug, accessToken));
+      navigate('/?edit=1');
+    } catch {
+      // status already set
+    }
+  }
 
   return (
     <motion.article
@@ -69,16 +105,41 @@ export function ProjectDetail({
         type="article"
       />
       <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl mb-3">{project.title}</h1>
+        {editMode ? (
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+            <EditableField
+              value={project.title}
+              editMode
+              onSave={(v) => void saveField('title', v)}
+              className="text-3xl md:text-4xl"
+              inputClassName="font-heading text-3xl md:text-4xl px-1"
+              aria-label="Project title"
+            />
+            <button
+              type="button"
+              onClick={() => void handleDelete()}
+              className="shrink-0 border border-red-300 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
+            >
+              Delete project
+            </button>
+          </div>
+        ) : (
+          <h1 className="mb-3 text-3xl md:text-4xl">{project.title}</h1>
+        )}
         <time
-          className="block text-sm opacity-70 mb-6"
+          className="mb-6 block text-sm opacity-70"
           dateTime={project.publishedAt}
         >
           {formatDetailDate(project.publishedAt)}
         </time>
+        {editMode && project.status === 'draft' ? (
+          <p className="mb-4 text-xs tracking-wide text-ink/60 uppercase">
+            Draft — not visible on the public site
+          </p>
+        ) : null}
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 items-start gap-y-8">
+      <div className="grid grid-cols-1 items-start gap-y-8 md:grid-cols-12">
         <div className="md:col-span-4">
           {media ? (
             <ProjectBlock block={media} />
@@ -90,12 +151,53 @@ export function ProjectDetail({
             />
           ) : null}
         </div>
-        <div className="hidden md:block md:col-span-1" aria-hidden="true" />
+        <div className="hidden md:col-span-1 md:block" aria-hidden="true" />
         <div className="md:col-span-7">
           <div className="text-sm">
-            <MetaLine className="font-bold">{project.client}</MetaLine>
-            <MetaLine>{project.role}</MetaLine>
-            <MetaLine>{project.summary}</MetaLine>
+            {editMode ? (
+              <>
+                <EditableField
+                  value={project.client}
+                  editMode
+                  onSave={(v) => void saveField('client', v)}
+                  className="mb-1 font-bold"
+                  inputClassName="mb-1 font-bold px-1"
+                  placeholder="Client"
+                  aria-label="Client"
+                />
+                <EditableField
+                  value={project.role}
+                  editMode
+                  onSave={(v) => void saveField('role', v)}
+                  className="mb-1"
+                  inputClassName="mb-1 px-1"
+                  placeholder="Role"
+                  aria-label="Role"
+                />
+                <EditableField
+                  value={project.summary}
+                  editMode
+                  multiline
+                  onSave={(v) => void saveField('summary', v)}
+                  className="mb-1"
+                  inputClassName="mb-1 px-1"
+                  placeholder="Summary"
+                  aria-label="Summary"
+                />
+              </>
+            ) : (
+              <>
+                {hasContent(project.client) ? (
+                  <p className="mb-1 font-bold">{project.client}</p>
+                ) : null}
+                {hasContent(project.role) ? (
+                  <p className="mb-1">{project.role}</p>
+                ) : null}
+                {hasContent(project.summary) ? (
+                  <p className="mb-1">{project.summary}</p>
+                ) : null}
+              </>
+            )}
           </div>
           <ProjectBody body={rest} />
         </div>

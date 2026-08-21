@@ -30,6 +30,12 @@ Admin Google sign-in lives at `/admin/login`. Enable the Google provider in
 the Supabase dashboard and add redirect URLs for `http://localhost:5173/**`
 and the production UI origin. The API allowlist is `API_ADMIN_EMAILS`.
 
+Allowlisted admins can enter **edit mode** via the header **Edit** control or
+**Enter edit mode** on the login page (`/?edit=1`). While editing, project
+meta and About fields save on blur; homepage cards reorder with `@dnd-kit`.
+Body/media (TipTap) editing and image upload are not in this slice yet —
+follow-ups after Edit Mode Core.
+
 ## Stack
 
 - React 19 + Vite

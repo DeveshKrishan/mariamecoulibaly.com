@@ -25,12 +25,18 @@ describe('Seo', () => {
   });
 
   it('renders Open Graph and Twitter tags, resolving the image to an absolute URL', () => {
+    const siteUrl = (
+      import.meta.env.VITE_SITE_URL ??
+      'https://mariamecoulibaly-com-ui.vercel.app'
+    ).replace(/\/+$/, '');
+    const pageUrl = `${siteUrl}/about-me`;
+
     render(
       <Seo
         title="About Me"
         description="Bio copy."
         image="/images/about.jpg"
-        url="https://mariamecoulibaly-com-ui.vercel.app/about-me"
+        url={pageUrl}
         type="website"
       />,
     );
@@ -38,19 +44,13 @@ describe('Seo', () => {
     expect(metaContent('og:type')).toBe('website');
     expect(metaContent('og:title')).toBe('About Me — Mariam Coulibaly');
     expect(metaContent('og:description')).toBe('Bio copy.');
-    expect(metaContent('og:url')).toBe(
-      'https://mariamecoulibaly-com-ui.vercel.app/about-me',
-    );
-    expect(metaContent('og:image')).toBe(
-      'https://mariamecoulibaly-com-ui.vercel.app/images/about.jpg',
-    );
+    expect(metaContent('og:url')).toBe(pageUrl);
+    expect(metaContent('og:image')).toBe(`${siteUrl}/images/about.jpg`);
     expect(metaContent('twitter:card')).toBe('summary_large_image');
-    expect(metaContent('twitter:image')).toBe(
-      'https://mariamecoulibaly-com-ui.vercel.app/images/about.jpg',
-    );
+    expect(metaContent('twitter:image')).toBe(`${siteUrl}/images/about.jpg`);
     expect(
       document.head.querySelector('link[rel="canonical"]'),
-    ).toHaveAttribute('href', 'https://mariamecoulibaly-com-ui.vercel.app/about-me');
+    ).toHaveAttribute('href', pageUrl);
   });
 
   it('omits og:image, og:url, and the canonical link when not provided', () => {

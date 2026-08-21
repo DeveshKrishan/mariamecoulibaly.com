@@ -1,9 +1,32 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
 import { render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { AuthProvider } from '../../lib/auth';
+import { EditModeProvider } from '../../lib/editMode';
 import { ProjectBody } from './ProjectBody';
 import { ProjectDetail } from './ProjectDetail';
+
+vi.mock('../../lib/supabase', () => ({
+  isSupabaseConfigured: false,
+  supabase: null,
+}));
+
+const siteUrl = (
+  import.meta.env.VITE_SITE_URL ??
+  'https://mariamecoulibaly-com-ui.vercel.app'
+).replace(/\/+$/, '');
+
+function renderDetail(ui: ReactElement) {
+  return render(
+    <MemoryRouter>
+      <AuthProvider>
+        <EditModeProvider>{ui}</EditModeProvider>
+      </AuthProvider>
+    </MemoryRouter>,
+  );
+}
 
 const baseProject: Project = {
   id: '1',
@@ -65,14 +88,12 @@ describe('ProjectBody', () => {
 
 describe('ProjectDetail', () => {
   it('renders title, date, meta lines, body, and next project link', () => {
-    render(
-      <MemoryRouter>
-        <ProjectDetail
-          project={baseProject}
-          previous={null}
-          next={nextProject}
-        />
-      </MemoryRouter>,
+    renderDetail(
+      <ProjectDetail
+        project={baseProject}
+        previous={null}
+        next={nextProject}
+      />,
     );
 
     expect(
@@ -97,28 +118,26 @@ describe('ProjectDetail', () => {
   });
 
   it('places a leading image in the media column and remaining body beside it', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <ProjectDetail
-          project={{
-            ...baseProject,
-            body: [
-              { type: 'image', url: '/lead.jpg', alt: 'Lead still' },
-              {
-                type: 'paragraph',
-                text: 'Resident Home is a house of direct-to-consumer sleep brands.',
-              },
-              {
-                type: 'link',
-                url: 'https://example.com/watch',
-                label: 'Watch Here',
-              },
-            ],
-          }}
-          previous={null}
-          next={null}
-        />
-      </MemoryRouter>,
+    const { container } = renderDetail(
+      <ProjectDetail
+        project={{
+          ...baseProject,
+          body: [
+            { type: 'image', url: '/lead.jpg', alt: 'Lead still' },
+            {
+              type: 'paragraph',
+              text: 'Resident Home is a house of direct-to-consumer sleep brands.',
+            },
+            {
+              type: 'link',
+              url: 'https://example.com/watch',
+              label: 'Watch Here',
+            },
+          ],
+        }}
+        previous={null}
+        next={null}
+      />,
     );
 
     const mediaCol = container.querySelector('.md\\:col-span-4');
@@ -139,18 +158,16 @@ describe('ProjectDetail', () => {
   });
 
   it('falls back to the thumbnail when there is no leading media block', () => {
-    const { container } = render(
-      <MemoryRouter>
-        <ProjectDetail
-          project={{
-            ...baseProject,
-            thumbnailUrl: '/images/projects/residenthome.jpg',
-            body: [{ type: 'paragraph', text: 'Only copy in the body.' }],
-          }}
-          previous={null}
-          next={null}
-        />
-      </MemoryRouter>,
+    const { container } = renderDetail(
+      <ProjectDetail
+        project={{
+          ...baseProject,
+          thumbnailUrl: '/images/projects/residenthome.jpg',
+          body: [{ type: 'paragraph', text: 'Only copy in the body.' }],
+        }}
+        previous={null}
+        next={null}
+      />,
     );
 
     const mediaCol = container.querySelector('.md\\:col-span-4');
@@ -167,30 +184,26 @@ describe('ProjectDetail', () => {
   });
 
   it('hides placeholder Coming soon meta lines', () => {
-    render(
-      <MemoryRouter>
-        <ProjectDetail
-          project={{
-            ...baseProject,
-            client: '',
-            role: 'Coming soon.',
-            summary: 'Coming soon.',
-            body: [],
-          }}
-          previous={null}
-          next={null}
-        />
-      </MemoryRouter>,
+    renderDetail(
+      <ProjectDetail
+        project={{
+          ...baseProject,
+          client: '',
+          role: 'Coming soon.',
+          summary: 'Coming soon.',
+          body: [],
+        }}
+        previous={null}
+        next={null}
+      />,
     );
 
     expect(screen.queryByText('Coming soon.')).not.toBeInTheDocument();
   });
 
   it('sets SEO title, description, and canonical URL from the project', () => {
-    render(
-      <MemoryRouter>
-        <ProjectDetail project={baseProject} previous={null} next={null} />
-      </MemoryRouter>,
+    renderDetail(
+      <ProjectDetail project={baseProject} previous={null} next={null} />,
     );
 
     expect(document.title).toBe('Resident Home — Mariam Coulibaly');
@@ -202,25 +215,23 @@ describe('ProjectDetail', () => {
     );
     expect(
       document.head.querySelector('link[rel="canonical"]'),
-    ).toHaveAttribute(
-      'href',
-      'https://mariamecoulibaly-com-ui.vercel.app/projects/residenthome',
-    );
+    ).toHaveAttribute('href', `${siteUrl}/projects/residenthome`);
   });
 
   it('falls back to a generic SEO description when the summary is "Coming soon."', () => {
-    render(
-      <MemoryRouter>
-        <ProjectDetail
-          project={{ ...baseProject, summary: 'Coming soon.' }}
-          previous={null}
-          next={null}
-        />
-      </MemoryRouter>,
+    renderDetail(
+      <ProjectDetail
+        project={{ ...baseProject, summary: 'Coming soon.' }}
+        previous={null}
+        next={null}
+      />,
     );
 
     expect(
       document.head.querySelector('meta[name="description"]'),
-    ).toHaveAttribute('content', 'Resident Home, a project by Mariam Coulibaly.');
+    ).toHaveAttribute(
+      'content',
+      'Resident Home, a project by Mariam Coulibaly.',
+    );
   });
 });
