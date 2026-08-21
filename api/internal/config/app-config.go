@@ -32,6 +32,12 @@ type Config struct {
 	// DatabaseURL is the Postgres connection string. When empty, the API
 	// serves in-memory stub content (Phase 1 fallback).
 	DatabaseURL string `koanf:"database_url"`
+	// SupabaseURL is the project URL used for JWKS JWT verification
+	// (e.g. https://<ref>.supabase.co). Required for admin write routes.
+	SupabaseURL string `koanf:"supabase_url"`
+	// AdminEmails is the allowlist of emails permitted to use admin APIs.
+	// Loaded from API_ADMIN_EMAILS as a comma-separated string.
+	AdminEmails []string `koanf:"-"`
 }
 
 func defaults() map[string]any {
@@ -40,6 +46,7 @@ func defaults() map[string]any {
 		"port":         4000,
 		"cors_origin":  "http://localhost:5173",
 		"database_url": "",
+		"supabase_url": "",
 	}
 }
 
@@ -104,5 +111,38 @@ func Load() (*Config, error) {
 		}
 	}
 
+	// Prefer API_SUPABASE_URL; fall back to unprefixed SUPABASE_URL / VITE-style local .env.
+	if cfg.SupabaseURL == "" {
+		if v := os.Getenv("SUPABASE_URL"); v != "" {
+			cfg.SupabaseURL = v
+		} else if v := os.Getenv("SUPABASE_PROJECT_URL"); v != "" {
+			cfg.SupabaseURL = v
+		}
+	}
+	cfg.SupabaseURL = strings.TrimRight(strings.TrimSpace(cfg.SupabaseURL), "/")
+
+	cfg.AdminEmails = parseEmailList(os.Getenv("API_ADMIN_EMAILS"))
+
 	return &cfg, nil
+}
+
+func parseEmailList(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, p := range parts {
+		email := strings.ToLower(strings.TrimSpace(p))
+		if email == "" {
+			continue
+		}
+		if _, ok := seen[email]; ok {
+			continue
+		}
+		seen[email] = struct{}{}
+		out = append(out, email)
+	}
+	return out
 }

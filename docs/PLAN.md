@@ -724,9 +724,10 @@ node scripts/migrate-from-squarespace.ts
 - [x] Scaffold `supabase/` CLI migrations for the schema in Section 9.1 (hosted Supabase project still to be linked)
 - [x] Set up sqlc (`api/sqlc.yaml`, `api/internal/db/queries`) generating against `pgx/v5`; wire `internal/db` + `internal/store` into the API
 - [x] Database-backed public GET routes for projects and about page (Postgres when `API_DATABASE_URL` is set; in-memory stubs otherwise)
-- [ ] Admin authentication (magic link or OAuth)
+- [x] Admin authentication (Supabase Google OAuth + JWKS verify + `API_ADMIN_EMAILS` allowlist; `/admin/login`)
+- [x] Authenticated write APIs (create/update/soft-delete/reorder projects, update about, audit_log)
 - [ ] Media upload pipeline
-- [ ] Draft/publish workflow
+- [ ] Draft/publish workflow UI (API already accepts `draft` / `published` status)
 
 ### Phase 3 — Edit mode (2 weeks)
 
