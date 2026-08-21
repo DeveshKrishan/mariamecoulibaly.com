@@ -17,14 +17,79 @@ This is a pnpm monorepo:
 
 | Layer | Tech |
 |-------|------|
-| Frontend | React 19, TypeScript, Vite, React Router v7, Tailwind CSS v4, Framer Motion, `@dnd-kit` (drag-and-drop edit mode), Vercel Web Analytics |
-| Backend | Go 1.24, [chi](https://github.com/go-chi/chi) router, [koanf](https://github.com/knadh/koanf) for layered config |
-| Shared | TypeScript types published as the `@mariame/shared` workspace package |
+| Frontend (`ui/`) | React 19, TypeScript, Vite, React Router v7, Tailwind CSS v4, Framer Motion, `@dnd-kit`, TipTap (planned), Vercel Web Analytics |
+| Backend (`api/`) | Go 1.24, [chi](https://github.com/go-chi/chi), [koanf](https://github.com/knadh/koanf), [sqlc](https://sqlc.dev/) + [pgx/v5](https://github.com/jackc/pgx) |
+| Database | **Postgres** via Supabase (migrations under `supabase/`) |
+| Auth | Supabase Auth (Google OAuth) → JWT verified in Go against project JWKS + `API_ADMIN_EMAILS` allowlist |
+| Media | **S3** via Supabase Storage (bucket `project-media`). Local `ui/public/images/` until the upload pipeline lands ([docs/PLAN.md](./docs/PLAN.md) §5.5) |
+| Shared | TypeScript types as `@mariame/shared` (`shared/`) |
 | Tooling | pnpm workspaces, oxlint + Vitest (`ui`), golangci-lint + `go test` (`api`), commitlint, GitHub Actions CI |
-| Hosting | Vercel — `ui` as a static/Vite build, `api` via Vercel's Go Framework Preset |
+| Hosting | Vercel — `ui` (Vite SPA), `api` (Go Framework Preset) |
 
 See [docs/PLAN.md](./docs/PLAN.md) for the full architecture, edit-mode design,
 and phased delivery plan.
+
+## Architecture
+
+Public visitors hit the React SPA; the Go API reads published content from
+Postgres (or in-memory stubs when `API_DATABASE_URL` is unset). Admins sign in
+with Google via Supabase, then the UI sends Bearer JWTs on write routes.
+
+```mermaid
+flowchart LR
+  subgraph Client
+    UI["ui/<br/>React + Vite SPA"]
+  end
+
+  subgraph Backend
+    API["api/<br/>Go + chi"]
+  end
+
+  subgraph Supabase
+    Auth["Auth<br/>Google OAuth + JWKS"]
+    DB[(Postgres)]
+    Storage[("S3")]
+  end
+
+  Visitor((Visitor)) --> UI
+  Admin((Admin)) --> UI
+
+  UI -->|"GET /api/projects<br/>GET /api/pages/about"| API
+  UI -->|"Google sign-in"| Auth
+  Auth -->|"access token"| UI
+  UI -->|"admin writes<br/>Bearer JWT"| API
+
+  API -->|"verify JWT"| Auth
+  API -->|"sqlc / pgx<br/>read + write"| DB
+  API -.->|"signed upload URLs"| Storage
+  UI -.->|"upload image"| Storage
+```
+
+Request flow (simplified):
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant UI as ui (React)
+  participant API as api (Go)
+  participant DB as Postgres
+
+  User->>UI: Browse /, /projects/:slug, /about-me
+  UI->>API: GET /api/projects, /api/pages/about
+  API->>DB: sqlc queries (or in-memory stubs)
+  DB-->>API: rows
+  API-->>UI: JSON
+  UI-->>User: Render pages
+
+  Note over User,DB: Admin edit mode
+  User->>UI: Sign in at /admin/login
+  UI->>UI: Supabase Google OAuth
+  User->>UI: Edit fields / reorder / replace image
+  UI->>API: PATCH/PUT/POST + Bearer JWT
+  API->>API: JWKS verify + email allowlist
+  API->>DB: write + audit_log
+  API-->>UI: updated resource
+```
 
 ## Getting started
 

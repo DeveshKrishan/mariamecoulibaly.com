@@ -113,10 +113,10 @@ Preserve existing slugs during migration to avoid broken links and SEO loss.
 
 ### Should have (v1.1)
 
-- [x] Admin edit mode (see Section 6) — core toggle/toolbar/reorder/inline fields (TipTap/body + upload deferred)
+- [x] Admin edit mode (see Section 6) — core toggle/toolbar/reorder/inline fields (TipTap/body deferred)
 - [x] Drag-and-drop project reordering on homepage
 - [x] Inline text editing on About Me and project pages
-- [ ] Image upload/replace in edit mode
+- [ ] **Admin project picture replace** (thumbnail upload → Supabase Storage → update `thumbnail_url`; see §5.5 / §6.7)
 - [ ] Preview before publish
 
 ### Nice to have (v2)
@@ -170,7 +170,7 @@ Two viable approaches — pick one before Phase 2:
 | Migrations | **Supabase CLI** (`supabase migration new` / `supabase db push`) — also gives a local Postgres via `supabase start` that sqlc generates against |
 | Go tooling | [koanf](https://github.com/knadh/koanf) (config loading), [golangci-lint](https://golangci-lint.run/) (linting), [GoReleaser](https://goreleaser.com/) (releases), `gofmt`/`goimports` (formatting) |
 | Auth | Session/JWT middleware with an admin email allowlist (Section 7) |
-| Media storage | **Cloudflare R2** or **AWS S3** + CDN |
+| Media storage | **Supabase Storage** (same project as Postgres) — public `project-media` bucket; signed uploads via Go API |
 
 **Pros:** Full control over drag-and-drop save flow, custom admin UI, small static binary, fast startup, low memory footprint.  
 **Cons:** More code to build and maintain; smaller ecosystem of CMS-style helpers than Node.
@@ -182,7 +182,7 @@ Two viable approaches — pick one before Phase 2:
 | Frontend | **Vercel**, **Netlify**, or **Cloudflare Pages** |
 | API (if custom) | **Railway**, **Fly.io**, or **Vercel serverless** |
 | Domain DNS | **Cloudflare** (registrar or DNS-only) |
-| CDN / images | **Cloudflare Images** or **Cloudinary** |
+| Project images | **Supabase Storage** public URLs (optional CDN / Image transforms later) |
 
 ---
 
@@ -207,7 +207,8 @@ Two viable approaches — pick one before Phase 2:
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Database + Media Storage                        │
+│         Database (Supabase Postgres) + Media Storage         │
+│         (Supabase Storage bucket `project-media`)            │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -216,13 +217,13 @@ Two viable approaches — pick one before Phase 2:
 │                                                             │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐   │
 │  │ Login/OAuth │  │ Visual Editor│  │ Publish / Draft │   │
-│  └─────────────┘  │ (DnD + inline│  └─────────────────┘   │
-│                   │  text edit)  │                          │
+│  └─────────────┘  │ (DnD, text,  │  └─────────────────┘   │
+│                   │  thumbnails) │                          │
 │                   └──────────────┘                          │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ authenticated writes only
+                           │ authenticated writes + signed uploads
                            ▼
-                    Content API (POST/PATCH/DELETE)
+                    Content API (POST/PATCH/DELETE + media)
 ```
 
 ### Key design principle: **one codebase, two modes**
@@ -380,10 +381,42 @@ Use CSS custom properties in `:root` so edit mode can expose a simple theme pane
 
 ### 5.5 Media handling
 
-- Store originals in object storage (R2/S3)
-- Serve via CDN with transforms: `?w=800`, `?w=1600`, WebP/AVIF
-- Lazy load images with `loading="lazy"` and `srcSet`
-- Video: embed YouTube/Vimeo iframes or self-hosted `<video>` with poster
+**Current (seed / local):** thumbnails live under `ui/public/images/projects/` and
+`thumbnail_url` is a same-origin path (e.g. `/images/projects/residenthome.jpg`).
+
+**Target (admin replace):** store uploaded originals in **Supabase Storage**, keep
+the public URL on `projects.thumbnail_url` (and on body `image` blocks when those
+become editable).
+
+| Concern | Choice |
+|---------|--------|
+| Bucket | `project-media` (public read; write only via signed URL from admin API) |
+| Object key | `projects/{projectId}/{uuid}.{ext}` — never trust client filenames |
+| Allowed types | `image/jpeg`, `image/png`, `image/webp` |
+| Max size | 20 MB per image |
+| DB | `thumbnail_url` holds the public object URL after replace |
+| Serving | Supabase public URL today; add transforms (`?width=`) / CDN later if needed |
+| Lazy load | `loading="lazy"` + `srcSet` when transform URLs exist |
+| Video | unchanged — YouTube/Vimeo/Drive links in `projects.body` (not uploaded) |
+
+**Replace pipeline (thumbnail):**
+
+```
+Admin picks file
+  → POST /api/admin/media/upload-url  { projectId, contentType, byteSize }
+  → API checks admin JWT + allowlist, validates MIME/size, returns signed PUT URL + publicUrl
+  → Client uploads bytes to Storage
+  → PATCH /api/admin/projects/:id  { thumbnailUrl: publicUrl }
+  → audit_log: media.replace
+```
+
+Optional follow-up: delete the previous Storage object when the old URL is under
+our bucket (avoid orphaned files). Body / leading-detail image replace reuses the
+same upload-url endpoint once TipTap/body editing lands.
+
+**One-time migration:** copy `ui/public/images/projects/*` into the bucket and
+rewrite seeded `thumbnail_url` values to public Storage URLs so local static
+files are no longer required in production.
 
 ---
 
@@ -398,15 +431,17 @@ Use CSS custom properties in `:root` so edit mode can expose a simple theme pane
 
 ### 6.2 What admins can edit
 
-| Element | Interaction |
-|---------|-------------|
-| Project order on homepage | Drag-and-drop reorder (`@dnd-kit/sortable`) |
-| Project title, role, body | Click-to-edit inline text |
-| Project thumbnail | Click → upload modal → replace image |
-| About Me headline & bio | Inline edit |
-| External links | Editable list (add/remove/reorder) |
-| New project | “+ Add project” button in grid |
-| Delete project | Trash icon with confirmation dialog |
+| Element | Interaction | Status |
+|---------|-------------|--------|
+| Project order on homepage | Drag-and-drop reorder (`@dnd-kit/sortable`) | Done |
+| Project title, role, summary, client, date | Click-to-edit inline text | Done |
+| Project slug | Inline edit with uniqueness check | Done |
+| **Project thumbnail** | Click image → file picker → upload → replace | **Next** (§6.7) |
+| Project body (rich text / blocks) | TipTap / block editor | Deferred |
+| About Me headline & bio | Inline edit | Done |
+| External links | Editable list (add/remove/reorder) | Done |
+| New project | “+ Add project” button in grid | Done |
+| Delete project | Trash icon with confirmation dialog | Done |
 
 ### 6.3 Edit workflow
 
@@ -461,7 +496,43 @@ Always sanitize HTML before save (DOMPurify) to prevent XSS.
 - Arbitrary HTML/script injection
 - Dragging elements outside defined zones (only reorder projects, not free-form layout)
 - Editing routing/slugs without confirmation (breaks external links)
-- Uploading executable files
+- Uploading executable files or non-image MIME types for project pictures
+
+### 6.7 Admin project picture replace
+
+**Scope for this slice:** replace the project **thumbnail** used on the homepage
+grid and as the detail-page fallback when there is no leading body media block.
+Replacing inline body images waits on the TipTap/body editor.
+
+**UI (edit mode only):**
+
+1. Homepage grid card and project detail thumbnail show a hover affordance
+   (“Replace image” / camera icon) when `editMode` is on.
+2. Click opens a native file picker (`accept="image/jpeg,image/png,image/webp"`).
+3. Show a local preview + busy state while upload + PATCH run.
+4. On success, update local project state so the grid/detail re-render with the
+   new URL; toast/toolbar status on failure (keep previous image).
+5. No separate modal required for v1 — picker + optimistic preview is enough.
+
+**API:**
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/admin/media/upload-url` | Authz + validate; return signed PUT URL + final public URL |
+| `PATCH` | `/api/admin/projects/:id` | Persist `thumbnailUrl` (already exists) |
+
+Upload-url request body: `{ projectId, contentType, byteSize }`.  
+Response: `{ uploadUrl, publicUrl, objectKey }`.
+
+**Acceptance criteria:**
+
+- [ ] Admin can replace a thumbnail from the homepage grid in edit mode
+- [ ] Admin can replace a thumbnail from the project detail page in edit mode
+- [ ] Non-admins never see replace controls; unauthenticated upload-url returns 401/403
+- [ ] Rejected files (wrong type / over size) never hit Storage
+- [ ] New image appears on grid + detail after save without a full page reload
+- [ ] `audit_log` records `media.replace` with project id + old/new URLs
+- [ ] Seeded/static `/images/projects/*` still works until Storage migration runs
 
 ---
 
@@ -526,6 +597,7 @@ Log admin actions for accountability:
 { action: 'project.update', projectId, userEmail, userDisplayName, timestamp, diff }
 { action: 'project.publish', projectId, userEmail, userDisplayName, timestamp }
 { action: 'project.reorder', userEmail, userDisplayName, timestamp, newOrder }
+{ action: 'media.replace', projectId, userEmail, userDisplayName, timestamp, oldUrl, newUrl }
 ```
 
 ---
@@ -600,9 +672,8 @@ api.mariamecoulibaly.com  →  backend API (if custom backend)
 |---------|------|-----------|
 | **Vercel/Netlify/Cloudflare Pages** | React SPA (`ui/`) static hosting | $0–20/mo |
 | **Fly.io** or **Railway** | Go API (`api/`) — compiles to a small static binary, deploys well as a container | $0–10/mo |
-| **Supabase** (free tier) | Postgres + migrations (CLI) + storage | $0–25/mo |
-| **Cloudflare** | DNS + CDN + R2 storage | $0–5/mo |
-| **Cloudinary** (optional) | Image transforms | $0–25/mo |
+| **Supabase** (free tier) | Postgres + migrations (CLI) + **Storage** (project images) | $0–25/mo |
+| **Cloudflare** | DNS + CDN | $0–5/mo |
 
 **Total:** ~$0–50/mo vs Squarespace ~$16–26/mo, with full control and custom edit mode.
 
@@ -617,9 +688,10 @@ VITE_SITE_URL=https://www.mariamecoulibaly.com
 DATABASE_URL=postgresql://...
 ADMIN_EMAILS=mariam@example.com
 SESSION_SECRET=<random-64-char-string>
-S3_BUCKET=mariam-portfolio-media
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
+API_SUPABASE_URL=https://<ref>.supabase.co
+# Service role key — server only; used to mint Storage signed upload URLs
+API_SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_STORAGE_BUCKET=project-media
 ```
 
 ---
@@ -632,7 +704,9 @@ Schema lives as **Supabase CLI migrations** (`supabase/migrations/*.sql`); Go
 query code is generated from it with **sqlc** (`api/internal/db/queries/*.sql` →
 generated structs/methods using `pgx/v5`). Scaffolded in Phase 2 — see
 `api/README.md` (Database section) and `make -C api sqlc` / `make -C api seed`.
-Auth, media upload, and draft/publish writes are still outstanding.
+Auth and draft/publish write APIs are in place. **Next backend gap:** media
+upload-url endpoint + Supabase Storage bucket for admin thumbnail replace
+(§5.5 / §6.7).
 
 ```sql
 -- projects
@@ -676,9 +750,11 @@ CREATE TABLE audit_log (
 );
 ```
 
-> **Deferred:** a `media` table for editor-uploaded images (thumbnails / body
-> images in object storage). Videos stay as YouTube/Vimeo/Drive links in
-> `projects.body`. Add `media` when image upload lands.
+> **Media (in progress / next):** no separate `media` table for the first
+> replace slice — `projects.thumbnail_url` stores the Supabase Storage public
+> URL after upload. Add a `media` catalog table later if we need reuse across
+> projects, soft-delete orphans, or body-image inventory. Videos stay as
+> YouTube/Vimeo/Drive links in `projects.body`.
 
 ### 9.2 Content migration from Squarespace
 
@@ -726,7 +802,8 @@ node scripts/migrate-from-squarespace.ts
 - [x] Database-backed public GET routes for projects and about page (Postgres when `API_DATABASE_URL` is set; in-memory stubs otherwise)
 - [x] Admin authentication (Supabase Google OAuth + JWKS verify + `API_ADMIN_EMAILS` allowlist; `/admin/login`)
 - [x] Authenticated write APIs (create/update/soft-delete/reorder projects, update about, audit_log)
-- [ ] Media upload pipeline
+- [ ] **Media upload pipeline** — Supabase Storage bucket `project-media` + `POST /api/admin/media/upload-url` (§5.5)
+- [ ] One-time seed: migrate `ui/public/images/projects/*` → Storage and rewrite `thumbnail_url`s
 - [ ] Draft/publish workflow UI (API already accepts `draft` / `published` status)
 
 ### Phase 3 — Edit mode (2 weeks)
@@ -734,8 +811,8 @@ node scripts/migrate-from-squarespace.ts
 - [x] Edit mode context and toolbar (`?edit=1`, floating status bar)
 - [x] Drag-and-drop project reorder (+ add / soft-delete)
 - [x] Inline text editing (project meta + About; bio as textarea)
-- [ ] Image upload/replace
-- [ ] TipTap / body block editor
+- [ ] **Admin project picture replace** (grid + detail; §6.7 acceptance criteria)
+- [ ] TipTap / body block editor (incl. optional body image replace via same upload pipeline)
 - [ ] Auto-save drafts + Publish workflow UI
 - [ ] Preview and publish
 
