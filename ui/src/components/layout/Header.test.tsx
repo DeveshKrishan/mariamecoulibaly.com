@@ -31,7 +31,7 @@ describe('Header', () => {
   });
 
   it('opens and closes the mobile menu overlay', () => {
-    renderHeader();
+    const { container } = renderHeader();
 
     const toggle = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(toggle);
@@ -40,6 +40,14 @@ describe('Header', () => {
       screen.getByRole('navigation', { name: 'Mobile' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
+
+    const header = container.querySelector('header');
+    const overlay = container.querySelector('#mobile-nav');
+    // No transform while open so the fixed overlay covers the viewport.
+    expect(header?.className).not.toMatch(/translate-y/);
+    expect(overlay?.className).toContain('bg-white');
+    expect(overlay?.className).toContain('fixed');
+    expect(overlay?.className).toContain('inset-x-0');
 
     fireEvent.click(screen.getByRole('button', { name: 'Close menu' }));
     expect(
