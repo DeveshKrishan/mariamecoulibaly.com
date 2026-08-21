@@ -50,10 +50,13 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Un-hide on route change (SPA navigations may reset scroll without firing).
+  // Un-hide and resync chrome on route change (SPA navigations may reset
+  // scroll without firing a scroll event, leaving scrolled/hidden stale).
   useEffect(() => {
+    const y = window.scrollY;
     setHidden(false);
-    lastY.current = window.scrollY;
+    setScrolled(y > 8);
+    lastY.current = y;
   }, [pathname]);
 
   useEffect(() => {
