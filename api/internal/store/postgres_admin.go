@@ -294,6 +294,22 @@ func (p *Postgres) UpdateAboutPage(ctx context.Context, actor Actor, page models
 	return &out, nil
 }
 
+// LogAudit inserts an audit_log row outside of a content mutation transaction.
+func (p *Postgres) LogAudit(ctx context.Context, actor Actor, action string, payload []byte) error {
+	if payload == nil {
+		payload = []byte("{}")
+	}
+	if _, err := p.queries.InsertAuditLog(ctx, db.InsertAuditLogParams{
+		UserEmail:       actor.Email,
+		UserDisplayName: actor.DisplayName,
+		Action:          action,
+		Payload:         payload,
+	}); err != nil {
+		return fmt.Errorf("insert audit %q: %w", action, err)
+	}
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {

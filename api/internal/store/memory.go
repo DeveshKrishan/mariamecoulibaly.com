@@ -76,3 +76,8 @@ func (m *Memory) ReorderProjects(context.Context, Actor, []string) error {
 func (m *Memory) UpdateAboutPage(context.Context, Actor, models.AboutPage) (*models.AboutPage, error) {
 	return nil, ErrReadOnly
 }
+
+// LogAudit is a no-op for the in-memory store.
+func (m *Memory) LogAudit(context.Context, Actor, string, []byte) error {
+	return nil
+}

@@ -35,6 +35,11 @@ type Config struct {
 	// SupabaseURL is the project URL used for JWKS JWT verification
 	// (e.g. https://<ref>.supabase.co). Required for admin write routes.
 	SupabaseURL string `koanf:"supabase_url"`
+	// SupabaseServiceRoleKey is the secret service_role key used only on the
+	// server to mint Storage signed upload URLs and delete replaced objects.
+	SupabaseServiceRoleKey string `koanf:"supabase_service_role_key"`
+	// StorageBucket is the Supabase Storage bucket for project media.
+	StorageBucket string `koanf:"storage_bucket"`
 	// AdminEmails is the allowlist of emails permitted to use admin APIs.
 	// Loaded from API_ADMIN_EMAILS as a comma-separated string.
 	AdminEmails []string `koanf:"-"`
@@ -42,11 +47,13 @@ type Config struct {
 
 func defaults() map[string]any {
 	return map[string]any{
-		"env":          "development",
-		"port":         4000,
-		"cors_origin":  "http://localhost:5173",
-		"database_url": "",
-		"supabase_url": "",
+		"env":                       "development",
+		"port":                      4000,
+		"cors_origin":               "http://localhost:5173",
+		"database_url":              "",
+		"supabase_url":              "",
+		"supabase_service_role_key": "",
+		"storage_bucket":            "project-media",
 	}
 }
 
@@ -120,6 +127,22 @@ func Load() (*Config, error) {
 		}
 	}
 	cfg.SupabaseURL = strings.TrimRight(strings.TrimSpace(cfg.SupabaseURL), "/")
+
+	if cfg.SupabaseServiceRoleKey == "" {
+		if v := os.Getenv("SUPABASE_SERVICE_ROLE_KEY"); v != "" {
+			cfg.SupabaseServiceRoleKey = v
+		}
+	}
+	cfg.SupabaseServiceRoleKey = strings.TrimSpace(cfg.SupabaseServiceRoleKey)
+
+	if cfg.StorageBucket == "" {
+		if v := os.Getenv("SUPABASE_STORAGE_BUCKET"); v != "" {
+			cfg.StorageBucket = v
+		} else {
+			cfg.StorageBucket = "project-media"
+		}
+	}
+	cfg.StorageBucket = strings.TrimSpace(cfg.StorageBucket)
 
 	cfg.AdminEmails = parseEmailList(os.Getenv("API_ADMIN_EMAILS"))
 
