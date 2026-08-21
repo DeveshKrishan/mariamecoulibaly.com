@@ -99,7 +99,7 @@ describe('ProjectDetail', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Resident Home' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Jul 22')).toBeInTheDocument();
+    expect(screen.getByText('Jul 22, 2026')).toBeInTheDocument();
     expect(screen.getByText('Resident Home/Nectar')).toBeInTheDocument();
     expect(
       screen.getByText('Assistant Editor — Freelance'),

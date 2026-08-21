@@ -1,6 +1,7 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { EditableDate } from '../edit/EditableDate';
 import { EditableField } from '../edit/EditableField';
 import {
   deleteProject,
@@ -8,7 +9,6 @@ import {
   updateProject,
 } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
-import { formatDetailDate } from '../../lib/dates';
 import { useEditMode } from '../../lib/editMode';
 import { absoluteUrl } from '../../lib/site';
 import { hasContent, truncate } from '../../lib/text';
@@ -126,12 +126,14 @@ export function ProjectDetail({
         ) : (
           <h1 className="mb-3 text-3xl md:text-4xl">{project.title}</h1>
         )}
-        <time
+        <EditableDate
+          value={project.publishedAt}
+          editMode={editMode}
+          onSave={(v) => void saveField('publishedAt', v)}
           className="mb-6 block text-sm opacity-70"
-          dateTime={project.publishedAt}
-        >
-          {formatDetailDate(project.publishedAt)}
-        </time>
+          inputClassName="mb-6 block text-sm opacity-70 px-1"
+          aria-label="Project date"
+        />
         {editMode && project.status === 'draft' ? (
           <p className="mb-4 text-xs tracking-wide text-ink/60 uppercase">
             Draft — not visible on the public site
