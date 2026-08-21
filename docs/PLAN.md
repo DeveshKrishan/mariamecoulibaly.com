@@ -113,9 +113,9 @@ Preserve existing slugs during migration to avoid broken links and SEO loss.
 
 ### Should have (v1.1)
 
-- [ ] Admin edit mode (see Section 6)
-- [ ] Drag-and-drop project reordering on homepage
-- [ ] Inline text editing on About Me and project pages
+- [x] Admin edit mode (see Section 6) — core toggle/toolbar/reorder/inline fields (TipTap/body + upload deferred)
+- [x] Drag-and-drop project reordering on homepage
+- [x] Inline text editing on About Me and project pages
 - [ ] Image upload/replace in edit mode
 - [ ] Preview before publish
 
@@ -731,11 +731,12 @@ node scripts/migrate-from-squarespace.ts
 
 ### Phase 3 — Edit mode (2 weeks)
 
-- [ ] Edit mode context and toolbar
-- [ ] Drag-and-drop project reorder
-- [ ] Inline text editing
+- [x] Edit mode context and toolbar (`?edit=1`, floating status bar)
+- [x] Drag-and-drop project reorder (+ add / soft-delete)
+- [x] Inline text editing (project meta + About; bio as textarea)
 - [ ] Image upload/replace
-- [ ] Auto-save drafts
+- [ ] TipTap / body block editor
+- [ ] Auto-save drafts + Publish workflow UI
 - [ ] Preview and publish
 
 ### Phase 4 — Migration & launch (1 week)

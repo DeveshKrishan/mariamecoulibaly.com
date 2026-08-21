@@ -1,57 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Seo } from '../components/seo/Seo';
-import { ApiError, getAdminMe, type AdminMe } from '../lib/api';
 import { useAuth } from '../lib/auth';
 
 export function AdminLoginPage() {
-  const { accessToken, loading, configured, signInWithGoogle, signOut, session } =
-    useAuth();
-  const [admin, setAdmin] = useState<AdminMe | null>(null);
+  const {
+    loading,
+    configured,
+    isAdmin,
+    admin,
+    adminLoading,
+    signInWithGoogle,
+    signOut,
+    session,
+    accessToken,
+  } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
 
-  useEffect(() => {
-    if (!accessToken) {
-      setAdmin(null);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setChecking(true);
-    getAdminMe(accessToken)
-      .then((me) => {
-        if (!cancelled) {
-          setAdmin(me);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setAdmin(null);
-          const status = err instanceof ApiError ? err.status : 0;
-          if (status === 403) {
-            setError(
-              'Signed in with Google, but this email is not on the admin allowlist.',
-            );
-          } else if (status === 401) {
-            setError('Session was rejected by the API. Try signing in again.');
-          } else {
-            setError('Could not verify admin access with the API.');
-          }
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setChecking(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  const checking = Boolean(accessToken) && adminLoading;
+  const denied = Boolean(session && accessToken && !adminLoading && !isAdmin);
 
   async function onSignIn() {
     setSigningIn(true);
@@ -67,7 +35,6 @@ export function AdminLoginPage() {
   async function onSignOut() {
     setError(null);
     await signOut();
-    setAdmin(null);
   }
 
   return (
@@ -120,18 +87,43 @@ export function AdminLoginPage() {
               <p className="text-sm text-black/60">Checking allowlist…</p>
             )}
             {admin && (
-              <p className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                Admin access confirmed for {admin.displayName} ({admin.email}).
-                Edit mode UI comes next.
+              <>
+                <p className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                  Admin access confirmed for {admin.displayName} ({admin.email}).
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Link
+                    to="/?edit=1"
+                    className="inline-flex items-center justify-center border border-ink bg-ink px-5 py-2.5 text-sm font-medium no-underline transition hover:opacity-90"
+                    style={{ color: '#fff' }}
+                  >
+                    Enter edit mode
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="inline-flex items-center justify-center border border-[var(--color-ink)] px-5 py-2.5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-black/5"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </>
+            )}
+            {denied && (
+              <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+                Signed in with Google, but this email is not on the admin
+                allowlist.
               </p>
             )}
-            <button
-              type="button"
-              onClick={onSignOut}
-              className="inline-flex items-center justify-center border border-[var(--color-ink)] px-5 py-2.5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-black/5"
-            >
-              Sign out
-            </button>
+            {!admin && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="inline-flex items-center justify-center border border-[var(--color-ink)] px-5 py-2.5 text-sm font-medium text-[var(--color-ink)] transition hover:bg-black/5"
+              >
+                Sign out
+              </button>
+            )}
           </div>
         )}
 

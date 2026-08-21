@@ -1,6 +1,18 @@
 import type { AboutPage, Project } from '@mariame/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getAboutPage, getAdminMe, getProject, getProjects } from './api';
+import {
+  createProject,
+  deleteProject,
+  getAboutPage,
+  getAdminMe,
+  getAdminProject,
+  getProject,
+  getProjects,
+  listAdminProjects,
+  reorderProjects,
+  updateAboutPage,
+  updateProject,
+} from './api';
 
 // No VITE_API_URL is set for tests, so api.ts falls back to this default.
 const API_URL = 'http://localhost:4000';
@@ -79,5 +91,72 @@ describe('api client', () => {
     await expect(getProjects()).rejects.toThrow(
       'Request to /api/projects failed with status 500',
     );
+  });
+
+  it('listAdminProjects and getAdminProject use admin paths with bearer', async () => {
+    mockFetchOnce([]);
+    await listAdminProjects('tok');
+    let call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/admin/projects`);
+    expect(((call[1] as RequestInit).headers as Headers).get('Authorization')).toBe(
+      'Bearer tok',
+    );
+
+    mockFetchOnce({ slug: 'x' } as Project);
+    await getAdminProject('x', 'tok');
+    call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/admin/projects/x`);
+  });
+
+  it('write helpers send Bearer + correct methods/paths', async () => {
+    const payload = {
+      slug: 'new',
+      title: 'New',
+      client: '',
+      role: '',
+      summary: '',
+      body: [],
+      thumbnailUrl: '',
+      sortOrder: 1,
+      status: 'draft' as const,
+      publishedAt: '2024-01-01T00:00:00Z',
+    };
+
+    mockFetchOnce({ ...payload, id: '1' } as Project);
+    await createProject(payload, 'tok');
+    let call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/projects`);
+    expect(call[1]).toMatchObject({ method: 'POST' });
+    expect(((call[1] as RequestInit).headers as Headers).get('Authorization')).toBe(
+      'Bearer tok',
+    );
+
+    mockFetchOnce({ ...payload, id: '1' } as Project);
+    await updateProject('new', payload, 'tok');
+    call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/projects/new`);
+    expect(call[1]).toMatchObject({ method: 'PATCH' });
+
+    mockFetchOnce(undefined, true, 204);
+    await deleteProject('new', 'tok');
+    call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/projects/new`);
+    expect(call[1]).toMatchObject({ method: 'DELETE' });
+
+    mockFetchOnce({ status: 'ok' });
+    await reorderProjects(['a', 'b'], 'tok');
+    call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/projects/reorder`);
+    expect(call[1]).toMatchObject({ method: 'PUT' });
+    expect(JSON.parse((call[1] as RequestInit).body as string)).toEqual({
+      slugs: ['a', 'b'],
+    });
+
+    const about = { title: 'About', headline: '', greeting: '', bio: '', photoUrl: '', links: [] };
+    mockFetchOnce(about);
+    await updateAboutPage(about, 'tok');
+    call = vi.mocked(fetch).mock.calls[0];
+    expect(call[0]).toBe(`${API_URL}/api/pages/about`);
+    expect(call[1]).toMatchObject({ method: 'PUT' });
   });
 });

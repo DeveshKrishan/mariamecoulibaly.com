@@ -4,7 +4,7 @@ import { useProject } from '../hooks/useProject';
 
 export function ProjectPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { project, previous, next, isLoading, notFound, error } =
+  const { project, setProject, previous, next, isLoading, notFound, error } =
     useProject(slug);
 
   if (notFound) {
@@ -23,7 +23,12 @@ export function ProjectPage() {
 
   return (
     <div className="mx-auto max-w-[1280px] px-[5vw] pb-24">
-      <ProjectDetail project={project} previous={previous} next={next} />
+      <ProjectDetail
+        project={project}
+        onProjectChange={setProject}
+        previous={previous}
+        next={next}
+      />
     </div>
   );
 }

@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { absoluteUrl } from './site';
 
-// No VITE_SITE_URL is set for tests, so site.ts falls back to this default.
-const SITE_URL = 'https://mariamecoulibaly-com-ui.vercel.app';
+// Resolve the same way site.ts does (env may set VITE_SITE_URL in .env.local).
+const SITE_URL = (
+  import.meta.env.VITE_SITE_URL ??
+  'https://mariamecoulibaly-com-ui.vercel.app'
+).replace(/\/+$/, '');
 
 describe('absoluteUrl', () => {
-  it('resolves a relative path against the default site URL', () => {
+  it('resolves a relative path against the configured site URL', () => {
     expect(absoluteUrl('/projects/residenthome')).toBe(
       `${SITE_URL}/projects/residenthome`,
     );

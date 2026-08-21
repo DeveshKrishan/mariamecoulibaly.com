@@ -1,9 +1,18 @@
 import type { Project } from '@mariame/shared';
 import { useEffect, useState } from 'react';
-import { getProject, getProjects } from '../lib/api';
+import {
+  getAdminProject,
+  getProject,
+  getProjects,
+  listAdminProjects,
+} from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { useEditMode } from '../lib/editMode';
 import { findProjectNeighbors } from '../lib/projectNeighbors';
 
 export function useProject(slug: string | undefined) {
+  const { accessToken } = useAuth();
+  const { editMode } = useEditMode();
   const [prevSlug, setPrevSlug] = useState(slug);
   const [project, setProject] = useState<Project | null>(null);
   const [previous, setPrevious] = useState<Project | null>(null);
@@ -28,8 +37,16 @@ export function useProject(slug: string | undefined) {
     if (!slug) return;
 
     let cancelled = false;
+    const admin = editMode && accessToken;
 
-    Promise.all([getProject(slug), getProjects()])
+    const detailPromise = admin
+      ? getAdminProject(slug, accessToken)
+      : getProject(slug);
+    const listPromise = admin
+      ? listAdminProjects(accessToken)
+      : getProjects();
+
+    Promise.all([detailPromise, listPromise])
       .then(([detail, projects]) => {
         if (cancelled) return;
         const neighbors = findProjectNeighbors(projects, slug);
@@ -39,7 +56,6 @@ export function useProject(slug: string | undefined) {
       })
       .catch((err: Error) => {
         if (cancelled) return;
-        // 404 from getProject surfaces as a thrown Error from the api client.
         if (/status 404/.test(err.message)) {
           setNotFound(true);
         } else {
@@ -53,11 +69,12 @@ export function useProject(slug: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, editMode, accessToken]);
 
   if (!slug) {
     return {
       project: null,
+      setProject,
       previous: null,
       next: null,
       isLoading: false,
@@ -66,5 +83,13 @@ export function useProject(slug: string | undefined) {
     };
   }
 
-  return { project, previous, next, isLoading, notFound, error };
+  return {
+    project,
+    setProject,
+    previous,
+    next,
+    isLoading,
+    notFound,
+    error,
+  };
 }

@@ -1,73 +1,58 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useEditMode } from '../../lib/editMode';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `hover:underline ${isActive ? 'underline' : ''}`;
-
-/** Near-top band where the header must stay visible (Squarespace uses ~10px). */
-const TOP_SHOW_Y = 10;
 
 /**
  * Site header matching the reference Squarespace chrome:
  * - fixed + transparent at the top of the page
  * - solid white after scroll
- * - “scroll back”: hide while scrolling down (only after leaving the top),
- *   show while scrolling up — never hide while still near the top
+ * - “scroll back”: hide while scrolling down, show while scrolling up
  * - desktop inline nav; mobile two-line hamburger → full-screen overlay
  * - inverse (light) text when sitting over the About dark hero
  */
 export function Header() {
   const { pathname } = useLocation();
+  const { editMode, setEditMode, canEdit } = useEditMode();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPathname, setMenuPathname] = useState(pathname);
-  const lastY = useRef(typeof window !== 'undefined' ? window.scrollY : 0);
+  const lastY = useRef(0);
 
-  // Close the mobile menu and un-hide the bar when the route changes
-  // (adjust state during render). SPA navigations often reset scroll to
-  // the top without firing a scroll event, which previously left the bar
-  // stuck hidden on mobile.
+  // Close the mobile menu when the route changes (adjust state during render).
   if (pathname !== menuPathname) {
     setMenuPathname(pathname);
     setMenuOpen(false);
-    setHidden(false);
-    if (typeof window !== 'undefined') {
-      // scrolled is derived from scroll position; sync it here too so the
-      // solid/transparent chrome matches the new page immediately.
-      setScrolled(window.scrollY > 8);
-    }
   }
 
   const overDarkHero = pathname === '/about-me' && !scrolled && !menuOpen;
 
   useEffect(() => {
-    const syncFromScroll = () => {
+    const onScroll = () => {
       const y = window.scrollY;
       setScrolled(y > 8);
-
-      // Always show near the top — matches Squarespace scroll-back, which
-      // never hides until scrollY > 10. Also covers scroll restoration that
-      // jumps to 0 without a directional scroll event.
-      if (y <= TOP_SHOW_Y) {
+      // Near the top always show (Squarespace-like ~10px band).
+      if (y <= 10) {
         setHidden(false);
-      } else if (y > lastY.current) {
+      } else if (y > lastY.current && y > 64) {
         setHidden(true);
       } else if (y < lastY.current) {
         setHidden(false);
       }
-
       lastY.current = y;
     };
 
-    syncFromScroll();
-    window.addEventListener('scroll', syncFromScroll, { passive: true });
-    return () => window.removeEventListener('scroll', syncFromScroll);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Keep the scroll cursor aligned after navigations so the next downward
-  // scroll is measured from the new page position.
+  // Un-hide on route change (SPA navigations may reset scroll without firing).
   useEffect(() => {
+    setHidden(false);
     lastY.current = window.scrollY;
   }, [pathname]);
 
@@ -95,11 +80,28 @@ export function Header() {
     .filter(Boolean)
     .join(' ');
 
+  const editSuffix = editMode ? '?edit=1' : '';
+  const homeTo = `/${editSuffix}`;
+  const aboutTo = `/about-me${editSuffix}`;
+
+  const editControl = canEdit ? (
+      <button
+        type="button"
+        className="text-sm tracking-wide hover:underline"
+        onClick={() => {
+          setEditMode(!editMode);
+          setMenuOpen(false);
+        }}
+      >
+        {editMode ? 'Exit edit' : 'Edit'}
+      </button>
+    ) : null;
+
   return (
     <header className={shellClass}>
       <div className="relative z-50 mx-auto flex max-w-[1280px] items-center justify-between px-[5vw] py-4">
         <NavLink
-          to="/"
+          to={homeTo}
           className="font-heading text-lg font-bold tracking-tight"
           onClick={() => setMenuOpen(false)}
         >
@@ -110,12 +112,13 @@ export function Header() {
           className="hidden gap-6 text-sm tracking-wide md:flex"
           aria-label="Primary"
         >
-          <NavLink to="/about-me" className={navLinkClass}>
+          <NavLink to={aboutTo} className={navLinkClass}>
             About Me
           </NavLink>
-          <NavLink to="/" className={navLinkClass} end>
+          <NavLink to={homeTo} className={navLinkClass} end>
             Projects
           </NavLink>
+          {editControl}
         </nav>
 
         <button
@@ -155,20 +158,21 @@ export function Header() {
             aria-label="Mobile"
           >
             <NavLink
-              to="/about-me"
+              to={aboutTo}
               className={navLinkClass}
               onClick={() => setMenuOpen(false)}
             >
               About Me
             </NavLink>
             <NavLink
-              to="/"
+              to={homeTo}
               className={navLinkClass}
               end
               onClick={() => setMenuOpen(false)}
             >
               Projects
             </NavLink>
+            {editControl}
           </nav>
         </div>
       ) : null}

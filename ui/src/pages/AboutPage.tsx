@@ -1,8 +1,11 @@
-import type { AboutPage as AboutPageData } from '@mariame/shared';
+import type { AboutPage as AboutPageData, AboutPageLink } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { EditableField } from '../components/edit/EditableField';
 import { Seo } from '../components/seo/Seo';
-import { getAboutPage } from '../lib/api';
+import { getAboutPage, updateAboutPage } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { useEditMode } from '../lib/editMode';
 import { absoluteUrl } from '../lib/site';
 import { stripHtml, truncate } from '../lib/text';
 
@@ -16,10 +19,40 @@ const gridCols = 'md:grid-cols-[repeat(24,minmax(0,1fr))]';
 
 export function AboutPage() {
   const [page, setPage] = useState<AboutPageData | null>(null);
+  const { accessToken } = useAuth();
+  const { editMode, runSave } = useEditMode();
 
   useEffect(() => {
     getAboutPage().then(setPage).catch(console.error);
   }, []);
+
+  async function savePage(next: AboutPageData) {
+    if (!accessToken || !page) return;
+    const previous = page;
+    setPage(next);
+    try {
+      const saved = await runSave(() => updateAboutPage(next, accessToken));
+      setPage(saved);
+    } catch {
+      setPage(previous);
+    }
+  }
+
+  function saveField<K extends keyof AboutPageData>(
+    key: K,
+    value: AboutPageData[K],
+  ) {
+    if (!page) return;
+    void savePage({ ...page, [key]: value });
+  }
+
+  function saveLink(index: number, patch: Partial<AboutPageLink>) {
+    if (!page) return;
+    const links = page.links.map((link, i) =>
+      i === index ? { ...link, ...patch } : link,
+    );
+    void savePage({ ...page, links });
+  }
 
   if (!page) return <p className="px-[5vw]">Loading…</p>;
 
@@ -46,25 +79,55 @@ export function AboutPage() {
             <h1 className="font-heading text-4xl leading-[1.05] font-medium sm:text-5xl md:text-6xl">
               {page.title}
             </h1>
-            <h3 className="font-heading mt-3 max-w-xl text-lg font-normal text-white/85 sm:text-xl md:text-2xl">
-              {page.headline}
-            </h3>
+            {editMode ? (
+              <EditableField
+                value={page.headline}
+                editMode
+                onSave={(v) => saveField('headline', v)}
+                className="font-heading mt-3 max-w-xl text-lg font-normal text-white/85 sm:text-xl md:text-2xl"
+                inputClassName="font-heading mt-3 max-w-xl w-full text-lg font-normal text-white sm:text-xl md:text-2xl px-1 outline-white/40"
+                aria-label="Headline"
+              />
+            ) : (
+              <h3 className="font-heading mt-3 max-w-xl text-lg font-normal text-white/85 sm:text-xl md:text-2xl">
+                {page.headline}
+              </h3>
+            )}
           </div>
 
           <div className="md:col-span-5 md:col-start-20 md:justify-self-end">
             <p className="text-sm font-bold tracking-wide">My Links</p>
             <div className="mt-2 flex flex-col gap-1 text-xs tracking-wide">
-              {page.links.map((link) => (
-                <a
-                  key={link.url}
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-fit underline underline-offset-2 hover:opacity-70"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {page.links.map((link, index) =>
+                editMode ? (
+                  <div key={`${link.url}-${index}`} className="flex flex-col gap-1">
+                    <EditableField
+                      value={link.label}
+                      editMode
+                      onSave={(v) => saveLink(index, { label: v })}
+                      inputClassName="px-1 outline-white/40 text-white"
+                      aria-label={`Link ${index + 1} label`}
+                    />
+                    <EditableField
+                      value={link.url}
+                      editMode
+                      onSave={(v) => saveLink(index, { url: v })}
+                      inputClassName="px-1 outline-white/40 text-white/80"
+                      aria-label={`Link ${index + 1} URL`}
+                    />
+                  </div>
+                ) : (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-fit underline underline-offset-2 hover:opacity-70"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
             </div>
           </div>
         </motion.div>
@@ -90,13 +153,38 @@ export function AboutPage() {
           ) : null}
 
           <div className="md:col-span-11 md:col-start-14 md:-mt-[1.5vw]">
-            <h2 className="font-heading text-2xl font-medium md:text-3xl">
-              {page.greeting}
-            </h2>
-            <p
-              className="mt-4 leading-relaxed [&_em]:italic"
-              dangerouslySetInnerHTML={{ __html: page.bio }}
-            />
+            {editMode ? (
+              <>
+                <EditableField
+                  value={page.greeting}
+                  editMode
+                  onSave={(v) => saveField('greeting', v)}
+                  className="font-heading text-2xl font-medium md:text-3xl"
+                  inputClassName="font-heading text-2xl font-medium md:text-3xl px-1"
+                  aria-label="Greeting"
+                />
+                <EditableField
+                  value={page.bio}
+                  editMode
+                  multiline
+                  asHtml
+                  onSave={(v) => saveField('bio', v)}
+                  className="mt-4 leading-relaxed [&_em]:italic"
+                  inputClassName="mt-4 w-full leading-relaxed px-1 font-sans text-base"
+                  aria-label="Bio"
+                />
+              </>
+            ) : (
+              <>
+                <h2 className="font-heading text-2xl font-medium md:text-3xl">
+                  {page.greeting}
+                </h2>
+                <p
+                  className="mt-4 leading-relaxed [&_em]:italic"
+                  dangerouslySetInnerHTML={{ __html: page.bio }}
+                />
+              </>
+            )}
           </div>
         </motion.div>
       </section>

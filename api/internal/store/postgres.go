@@ -179,9 +179,19 @@ func parsePublishedAt(value string) (pgtype.Timestamptz, error) {
 	if value == "" {
 		return pgtype.Timestamptz{}, nil
 	}
-	t, err := time.Parse("2006-01-02", value)
-	if err != nil {
-		return pgtype.Timestamptz{}, err
+	formats := []string{
+		"2006-01-02",
+		time.RFC3339,
+		time.RFC3339Nano,
+		"2006-01-02T15:04:05Z07:00",
 	}
-	return pgtype.Timestamptz{Time: t.UTC(), Valid: true}, nil
+	var lastErr error
+	for _, layout := range formats {
+		t, err := time.Parse(layout, value)
+		if err == nil {
+			return pgtype.Timestamptz{Time: t.UTC(), Valid: true}, nil
+		}
+		lastErr = err
+	}
+	return pgtype.Timestamptz{}, lastErr
 }
