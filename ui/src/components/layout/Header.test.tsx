@@ -126,6 +126,11 @@ describe('Header', () => {
     expect(container.querySelector('header')?.className).not.toMatch(
       /-translate-y-full/,
     );
+    // At top of About, inverse text (not stuck on solid scrolled chrome).
+    expect(container.querySelector('header')?.className).toContain('text-white');
+    expect(container.querySelector('header')?.className).not.toMatch(
+      /bg-white/,
+    );
   });
 
   it('does not show Edit when the visitor is not an admin', () => {

@@ -54,7 +54,18 @@ export function AboutPage() {
     void savePage({ ...page, links });
   }
 
-  if (!page) return <p className="px-[5vw]">Loading…</p>;
+  // Bleed under the fixed header (PageLayout main pt-[4.5rem]) so the
+  // transparent nav’s light text sits on the dark hero, not the white page.
+  const heroBleed =
+    'bg-dark-accent text-white -mt-[4.5rem] pt-[4.5rem]';
+
+  if (!page) {
+    return (
+      <section className={`${heroBleed} px-[5vw] py-10`}>
+        <p>Loading…</p>
+      </section>
+    );
+  }
 
   const description = page.headline || truncate(stripHtml(page.bio), 160);
 
@@ -68,7 +79,7 @@ export function AboutPage() {
       />
 
       {/* Dark hero — matches live site section theme "dark" / darkAccent */}
-      <section className="bg-dark-accent text-white">
+      <section className={heroBleed}>
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
