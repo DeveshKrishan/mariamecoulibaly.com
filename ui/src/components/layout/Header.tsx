@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useEditMode } from '../../lib/editMode';
+import { shouldCloseMobileMenuOnClick } from './mobileNav';
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `hover:underline ${isActive ? 'underline' : ''}`;
@@ -50,9 +51,10 @@ export function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Un-hide and resync chrome on route change (SPA navigations may reset
-  // scroll without firing a scroll event, leaving scrolled/hidden stale).
-  useEffect(() => {
+  // Un-hide and resync chrome on route change before paint. Must match
+  // ScrollToTop’s useLayoutEffect timing so a mid-page → new-route nav does
+  // not paint one frame of scrolled chrome (e.g. solid white on About hero).
+  useLayoutEffect(() => {
     const y = window.scrollY;
     setHidden(false);
     setScrolled(y > 8);
@@ -92,7 +94,9 @@ export function Header() {
   // the departing menu (visible flicker on mobile). Same-route taps still
   // need an explicit close because pathname will not update.
   const closeMenuIfCurrent = (targetPath: string) => () => {
-    if (pathname === targetPath) setMenuOpen(false);
+    if (shouldCloseMobileMenuOnClick(pathname, targetPath)) {
+      setMenuOpen(false);
+    }
   };
 
   const editControl = canEdit ? (
