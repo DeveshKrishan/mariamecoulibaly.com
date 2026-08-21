@@ -23,3 +23,10 @@ sql_paths = ["./seed.sql"]
 [studio]
 enabled = true
 port = 54323
+
+# Local Storage API (S3-compatible). Hosted projects get this automatically;
+# enable it here so `supabase start` exposes the same `project-media` bucket
+# created by migrations under supabase/migrations/.
+[storage]
+enabled = true
+file_size_limit = "20MiB"
