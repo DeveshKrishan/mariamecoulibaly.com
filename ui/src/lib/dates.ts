@@ -33,11 +33,20 @@ export function formatShortDate(isoDate: string): string {
   return `${parts.month}/${parts.day}/${parts.year.slice(-2)}`;
 }
 
-/** Project detail format matching the reference site, e.g. "Jul 22". */
+/** Project detail format, e.g. "Jul 22, 2026". */
 export function formatDetailDate(isoDate: string): string {
   const parts = parseIsoDateParts(isoDate);
   if (!parts) return isoDate;
   const monthName = MONTH_SHORT[parts.month - 1];
   if (!monthName) return isoDate;
-  return `${monthName} ${parts.day}`;
+  return `${monthName} ${parts.day}, ${parts.year}`;
+}
+
+/** Normalize stored ISO values to `YYYY-MM-DD` for `<input type="date">`. */
+export function toDateInputValue(isoDate: string): string {
+  const parts = parseIsoDateParts(isoDate);
+  if (!parts) return '';
+  const month = String(parts.month).padStart(2, '0');
+  const day = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${month}-${day}`;
 }
