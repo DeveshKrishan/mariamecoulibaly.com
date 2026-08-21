@@ -87,6 +87,14 @@ export function Header() {
   const homeTo = `/${editSuffix}`;
   const aboutTo = `/about-me${editSuffix}`;
 
+  // Keep the mobile overlay up until the route actually changes. Closing it
+  // in the same click that navigates paints one frame of the *old* page under
+  // the departing menu (visible flicker on mobile). Same-route taps still
+  // need an explicit close because pathname will not update.
+  const closeMenuIfCurrent = (targetPath: string) => () => {
+    if (pathname === targetPath) setMenuOpen(false);
+  };
+
   const editControl = canEdit ? (
       <button
         type="button"
@@ -106,7 +114,7 @@ export function Header() {
         <NavLink
           to={homeTo}
           className="font-heading text-lg font-bold tracking-tight"
-          onClick={() => setMenuOpen(false)}
+          onClick={closeMenuIfCurrent('/')}
         >
           Mariam Coulibaly
         </NavLink>
@@ -163,7 +171,7 @@ export function Header() {
             <NavLink
               to={aboutTo}
               className={navLinkClass}
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenuIfCurrent('/about-me')}
             >
               About Me
             </NavLink>
@@ -171,7 +179,7 @@ export function Header() {
               to={homeTo}
               className={navLinkClass}
               end
-              onClick={() => setMenuOpen(false)}
+              onClick={closeMenuIfCurrent('/')}
             >
               Projects
             </NavLink>

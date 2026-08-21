@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../../lib/auth';
@@ -72,6 +72,34 @@ describe('Header', () => {
     expect(overlay?.className).toContain('inset-x-0');
 
     fireEvent.click(screen.getByRole('button', { name: 'Close menu' }));
+    expect(
+      screen.queryByRole('navigation', { name: 'Mobile' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('closes the mobile menu on route change without an early same-click close', () => {
+    renderHeader('/about-me');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    const mobileNav = screen.getByRole('navigation', { name: 'Mobile' });
+    expect(mobileNav).toBeInTheDocument();
+
+    // Navigate About → Projects: menu should close with the route change
+    // (not via a pre-navigation setMenuOpen(false) that flashes the old page).
+    fireEvent.click(within(mobileNav).getByRole('link', { name: 'Projects' }));
+
+    expect(
+      screen.queryByRole('navigation', { name: 'Mobile' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('closes the mobile menu when tapping the already-active route', () => {
+    renderHeader('/about-me');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    const mobileNav = screen.getByRole('navigation', { name: 'Mobile' });
+    fireEvent.click(within(mobileNav).getByRole('link', { name: 'About Me' }));
+
     expect(
       screen.queryByRole('navigation', { name: 'Mobile' }),
     ).not.toBeInTheDocument();
