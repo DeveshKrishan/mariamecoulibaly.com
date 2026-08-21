@@ -30,6 +30,8 @@ file → environment variables. See `internal/config/app-config.go`.
 | `API_DATABASE_URL` | `database_url` | _(empty)_ | Postgres connection string. When unset, the API serves in-memory stub content. |
 | `DATABASE_URL` | `database_url` (fallback) | — | Unprefixed Supabase/PaaS URL used only when `API_DATABASE_URL` is empty. |
 | `API_SUPABASE_URL` | `supabase_url` | _(empty)_ | Supabase project URL for JWKS JWT verification (e.g. `https://<ref>.supabase.co`). Required with `API_ADMIN_EMAILS` to enable admin routes. |
+| `API_SUPABASE_SERVICE_ROLE_KEY` | `supabase_service_role_key` | _(empty)_ | Supabase **service_role** secret (server only). Required to mint Storage signed upload URLs. Falls back to `SUPABASE_SERVICE_ROLE_KEY`. |
+| `API_STORAGE_BUCKET` | `storage_bucket` | `project-media` | Supabase Storage bucket for project thumbnails. Falls back to `SUPABASE_STORAGE_BUCKET`. |
 | `API_ADMIN_EMAILS` | _(parsed)_ | _(empty)_ | Comma-separated allowlist of admin emails (case-insensitive). |
 | `PORT` | `port` (override) | — | Unprefixed port assigned by PaaS hosts (Vercel, Railway, Render, Fly). Takes precedence over `API_PORT` when set. |
 
@@ -62,6 +64,7 @@ over the file.
 | `GET` | `/api/admin/me` | Current admin identity |
 | `GET` | `/api/admin/projects` | List non-deleted projects (draft + published) |
 | `GET` | `/api/admin/projects/{slug}` | Get a non-deleted project |
+| `POST` | `/api/admin/media/upload-url` | Mint a signed Storage upload URL (`{ projectId, contentType, byteSize }`) |
 | `POST` | `/api/projects` | Create a project |
 | `PATCH` | `/api/projects/{slug}` | Update a project |
 | `DELETE` | `/api/projects/{slug}` | Soft-delete a project |

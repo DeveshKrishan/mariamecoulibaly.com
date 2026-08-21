@@ -9,6 +9,7 @@ import (
 
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/auth"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/config"
+	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/mediastore"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/store"
 )
 
@@ -16,6 +17,7 @@ import (
 type Server struct {
 	store store.Store
 	auth  auth.Verifier
+	media *mediastore.Client
 }
 
 // NewRouter builds the HTTP handler for the API, wiring routes and
@@ -23,7 +25,15 @@ type Server struct {
 //
 // verifier may be nil; admin routes then return 503 until auth is configured.
 func NewRouter(cfg *config.Config, content store.Store, verifier auth.Verifier) http.Handler {
-	s := &Server{store: content, auth: verifier}
+	s := &Server{
+		store: content,
+		auth:  verifier,
+		media: mediastore.New(mediastore.Config{
+			SupabaseURL:    cfg.SupabaseURL,
+			ServiceRoleKey: cfg.SupabaseServiceRoleKey,
+			StorageBucket:  cfg.StorageBucket,
+		}),
+	}
 	r := chi.NewRouter()
 	r.Use(withCORS(cfg.CORSOrigin))
 
@@ -37,6 +47,7 @@ func NewRouter(cfg *config.Config, content store.Store, verifier auth.Verifier) 
 		ar.Get("/api/admin/me", s.handleAdminMe)
 		ar.Get("/api/admin/projects", s.handleListAdminProjects)
 		ar.Get("/api/admin/projects/{slug}", s.handleGetAdminProject)
+		ar.Post("/api/admin/media/upload-url", s.handleMediaUploadURL)
 		ar.Post("/api/projects", s.handleCreateProject)
 		ar.Patch("/api/projects/{slug}", s.handleUpdateProject)
 		ar.Delete("/api/projects/{slug}", s.handleDeleteProject)

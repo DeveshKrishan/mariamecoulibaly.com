@@ -54,6 +54,9 @@ type Store interface {
 	SoftDeleteProject(ctx context.Context, actor Actor, slug string) error
 	ReorderProjects(ctx context.Context, actor Actor, slugs []string) error
 	UpdateAboutPage(ctx context.Context, actor Actor, page models.AboutPage) (*models.AboutPage, error)
+
+	// LogAudit writes an audit_log row. Memory store no-ops successfully.
+	LogAudit(ctx context.Context, actor Actor, action string, payload []byte) error
 }
 
 // Seeder can upsert the Phase 1 stub content into Postgres.

@@ -115,6 +115,11 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var previous *models.Project
+	if existing, err := s.store.GetAdminProjectBySlug(r.Context(), slug); err == nil {
+		previous = existing
+	}
+
 	project, err := s.store.UpdateProject(r.Context(), actor, slug, in)
 	if errors.Is(err, store.ErrReadOnly) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "database required for writes"})
@@ -133,6 +138,11 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		return
 	}
+
+	if previous != nil && previous.ThumbnailURL != project.ThumbnailURL {
+		s.cleanupReplacedThumbnail(r, actor, project.ID, previous.ThumbnailURL, project.ThumbnailURL)
+	}
+
 	writeJSON(w, http.StatusOK, project)
 }
 
