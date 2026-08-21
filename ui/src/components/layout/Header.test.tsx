@@ -11,10 +11,18 @@ function renderHeader(path = '/') {
   );
 }
 
+function setScrollY(y: number) {
+  Object.defineProperty(window, 'scrollY', {
+    configurable: true,
+    writable: true,
+    value: y,
+  });
+  fireEvent.scroll(window);
+}
+
 describe('Header', () => {
   afterEach(() => {
-    window.scrollY = 0;
-    fireEvent.scroll(window);
+    setScrollY(0);
   });
 
   it('renders the site title and desktop nav links', () => {
@@ -27,7 +35,9 @@ describe('Header', () => {
       'href',
       '/about-me',
     );
-    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Primary' }),
+    ).toBeInTheDocument();
   });
 
   it('opens and closes the mobile menu overlay', () => {
@@ -39,7 +49,9 @@ describe('Header', () => {
     expect(
       screen.getByRole('navigation', { name: 'Mobile' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Close menu' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close menu' }),
+    ).toBeInTheDocument();
 
     const header = container.querySelector('header');
     const overlay = container.querySelector('#mobile-nav');
@@ -59,5 +71,60 @@ describe('Header', () => {
     const { container } = renderHeader('/about-me');
     const header = container.querySelector('header');
     expect(header?.className).toContain('text-white');
+  });
+
+  it('stays visible at the top of the page', () => {
+    const { container } = renderHeader();
+    setScrollY(0);
+
+    const header = container.querySelector('header');
+    expect(header?.className).not.toMatch(/-translate-y-full/);
+  });
+
+  it('only hides after scrolling down past the near-top band', () => {
+    const { container } = renderHeader();
+    const header = container.querySelector('header');
+
+    // Still near the top — must remain visible (matches Squarespace ~10px).
+    setScrollY(8);
+    expect(header?.className).not.toMatch(/-translate-y-full/);
+
+    // Scroll down past the band — hide.
+    setScrollY(80);
+    expect(header?.className).toMatch(/-translate-y-full/);
+
+    // Scroll up — show again.
+    setScrollY(40);
+    expect(header?.className).not.toMatch(/-translate-y-full/);
+
+    // Return to the top — always show.
+    setScrollY(0);
+    expect(header?.className).not.toMatch(/-translate-y-full/);
+  });
+
+  it('shows again on route change even if it was hidden from prior scroll', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    setScrollY(120);
+    expect(container.querySelector('header')?.className).toMatch(
+      /-translate-y-full/,
+    );
+
+    // SPA navigations often reset scroll to 0 without firing scroll — the
+    // header must un-hide via the pathname effect (mobile stuck-hidden bug).
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      writable: true,
+      value: 0,
+    });
+    fireEvent.click(screen.getByRole('link', { name: 'About Me' }));
+
+    expect(container.querySelector('header')?.className).not.toMatch(
+      /-translate-y-full/,
+    );
   });
 });
