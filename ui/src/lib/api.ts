@@ -140,6 +140,7 @@ export function updateAboutPage(
 
 export function projectToWritePayload(project: Project): ProjectWritePayload {
   return {
+    slug: project.slug,
     title: project.title,
     client: project.client,
     role: project.role,

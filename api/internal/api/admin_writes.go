@@ -105,8 +105,11 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	body.Slug = slug
-	in, errMsg := validateProjectInput(body, false)
+	// Empty body.slug keeps the current URL name; otherwise rename.
+	if strings.TrimSpace(body.Slug) == "" {
+		body.Slug = slug
+	}
+	in, errMsg := validateProjectInput(body, true)
 	if errMsg != "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errMsg})
 		return
@@ -119,6 +122,10 @@ func (s *Server) handleUpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 	if errors.Is(err, store.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "project not found"})
+		return
+	}
+	if errors.Is(err, store.ErrConflict) {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "slug already exists"})
 		return
 	}
 	if err != nil {
