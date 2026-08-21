@@ -156,3 +156,7 @@ api/dist/
 
 # Local PR screenshot captures (never commit — embed in the PR description)
 /tmp/
+
+# Supabase CLI local state
+supabase/.branches
+supabase/.temp

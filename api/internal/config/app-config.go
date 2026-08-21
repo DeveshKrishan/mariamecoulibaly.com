@@ -29,13 +29,17 @@ type Config struct {
 	Port int `koanf:"port"`
 	// CORSOrigin is the single allowed browser origin (the ui dev/prod URL).
 	CORSOrigin string `koanf:"cors_origin"`
+	// DatabaseURL is the Postgres connection string. When empty, the API
+	// serves in-memory stub content (Phase 1 fallback).
+	DatabaseURL string `koanf:"database_url"`
 }
 
 func defaults() map[string]any {
 	return map[string]any{
-		"env":         "development",
-		"port":        4000,
-		"cors_origin": "http://localhost:5173",
+		"env":          "development",
+		"port":         4000,
+		"cors_origin":  "http://localhost:5173",
+		"database_url": "",
 	}
 }
 
@@ -48,7 +52,7 @@ func defaults() map[string]any {
 // silently skipped.
 //
 // Environment variables are read with an API_ prefix, e.g. API_PORT,
-// API_CORS_ORIGIN, API_ENV.
+// API_CORS_ORIGIN, API_ENV, API_DATABASE_URL.
 func Load() (*Config, error) {
 	k := koanf.New(".")
 
@@ -90,6 +94,14 @@ func Load() (*Config, error) {
 			return nil, fmt.Errorf("config: parsing PORT %q: %w", v, err)
 		}
 		cfg.Port = port
+	}
+
+	// Supabase / hosted Postgres commonly expose DATABASE_URL without the
+	// API_ prefix. Prefer the explicit API_DATABASE_URL when both are set.
+	if cfg.DatabaseURL == "" {
+		if v := os.Getenv("DATABASE_URL"); v != "" {
+			cfg.DatabaseURL = v
+		}
 	}
 
 	return &cfg, nil

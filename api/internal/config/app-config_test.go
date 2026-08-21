@@ -7,6 +7,9 @@ import (
 )
 
 func TestLoadDefaults(t *testing.T) {
+	t.Setenv("API_DATABASE_URL", "")
+	t.Setenv("DATABASE_URL", "")
+
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
@@ -19,6 +22,9 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if cfg.Env != "development" {
 		t.Errorf("Env = %q, want %q", cfg.Env, "development")
+	}
+	if cfg.DatabaseURL != "" {
+		t.Errorf("DatabaseURL = %q, want empty", cfg.DatabaseURL)
 	}
 }
 
@@ -140,5 +146,44 @@ func TestLoadMissingFileIsIgnored(t *testing.T) {
 	}
 	if cfg.Port != 4000 {
 		t.Errorf("Port = %d, want default 4000", cfg.Port)
+	}
+}
+
+func TestLoadDatabaseURLFromAPIEnv(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("API_DATABASE_URL", "postgres://api@localhost/db")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.DatabaseURL != "postgres://api@localhost/db" {
+		t.Errorf("DatabaseURL = %q, want API_DATABASE_URL value", cfg.DatabaseURL)
+	}
+}
+
+func TestLoadDatabaseURLFromUnprefixedEnv(t *testing.T) {
+	t.Setenv("API_DATABASE_URL", "")
+	t.Setenv("DATABASE_URL", "postgres://plain@localhost/db")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.DatabaseURL != "postgres://plain@localhost/db" {
+		t.Errorf("DatabaseURL = %q, want DATABASE_URL value", cfg.DatabaseURL)
+	}
+}
+
+func TestLoadAPIDatabaseURLWinsOverUnprefixed(t *testing.T) {
+	t.Setenv("API_DATABASE_URL", "postgres://api@localhost/db")
+	t.Setenv("DATABASE_URL", "postgres://plain@localhost/db")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.DatabaseURL != "postgres://api@localhost/db" {
+		t.Errorf("DatabaseURL = %q, want API_DATABASE_URL to win", cfg.DatabaseURL)
 	}
 }

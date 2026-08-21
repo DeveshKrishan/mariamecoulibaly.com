@@ -1,4 +1,4 @@
-.PHONY: run dev build fmt fmt-check vet lint test tidy release release-snapshot clean
+.PHONY: run dev build fmt fmt-check vet lint test tidy sqlc seed release release-snapshot clean
 
 run: dev
 
@@ -7,6 +7,14 @@ dev:
 
 build:
 	go build -o bin/api ./cmd/api
+
+# Regenerates internal/db from sqlc.yaml + supabase/migrations + queries.
+sqlc:
+	sqlc generate
+
+# Upserts stub projects + about page into Postgres (requires API_DATABASE_URL).
+seed:
+	go run ./cmd/seed
 
 # Formats code in place with gofmt + goimports (via golangci-lint fmt).
 fmt:

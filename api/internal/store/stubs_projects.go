@@ -1,0 +1,171 @@
+package store
+
+import "github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/models"
+
+// stubProjects is the Phase 1 content migrated from the reference site
+// (mariamecoulibaly.com). It backs the in-memory Store and is upserted into
+// Postgres by `make seed` / cmd/seed when a database is configured.
+//
+// Titles, slugs, publish dates, roles, summaries, and body copy match the
+// reference site; sortOrder is reverse-chronological (0 = most recent).
+//
+// ThumbnailURLs point at images under ui/public/images/projects/ (served by
+// the ui app — media object storage lands later per docs/PLAN.md §5.5).
+var stubProjects = []models.Project{
+	{
+		ID: "1", Slug: "residenthome", Title: "Resident Home", PublishedAt: "2026-07-22",
+		Client: "Resident Home/Nectar", Role: "Assistant Editor — Freelance",
+		Summary: "Organized footage and re-cut Amazon advertisements",
+		Body: []models.RichTextBlock{
+			{"type": "image", "url": "/images/projects/residenthome.jpg", "alt": "Resident Home"},
+			{"type": "paragraph", "text": "Resident Home is a house of direct-to-consumer sleep brands, best known for Nectar, DreamCloud, Siena, and Awara mattresses."},
+			{"type": "link", "url": "https://m.media-amazon.com/images/S/al-na-9d5791cf-3faf/88c96b86-52f0-45ba-8ac6-25a9ed632108.mp4/videoTile.mp4", "label": "Watch Here"},
+		},
+		ThumbnailURL: "/images/projects/residenthome.jpg", SortOrder: 0, Status: models.StatusPublished,
+	},
+	{
+		ID: "2", Slug: "udacity", Title: "Udacity Accenture", PublishedAt: "2026-06-13",
+		Client: "Udacity/Accenture", Role: "Junior Video Producer",
+		Summary: "Produced 50+ Courses and Marketing Videos",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Udacity is a global edtech platform reaching over 16.9 million learners across 240+ countries through industry-co-created Nanodegree programs in tech, AI, and data. I apply my film background to produce and edit video course content that makes complex, technical subjects clear and engaging for a worldwide audience."},
+			{"type": "paragraph", "text": "Examples: Japanese Localization, Java Programming, Anthropic Engineer"},
+			{"type": "embed", "url": "https://www.youtube.com/watch?v=yftQNN73AP0&t=13s", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/udacity.jpg", SortOrder: 1, Status: models.StatusPublished,
+	},
+	{
+		ID: "3", Slug: "flyingupstream", Title: "Flying Upstream Podcast", PublishedAt: "2025-11-13",
+		Client: "Flying Upstream Podcast", Role: "Podcast Editor",
+		Summary: "Edited Episodes 100-150 | Contributed to a 300% increase in streams and downloads",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Hosted by Luisa Anderson and Kristyn Medeiros, Flying Upstream invites you to explore the unconventional paths that lead to fulfilling, sustainable lives. Each episode uncovers how individuals break free from societal norms to create their own unique journeys. From ancient wisdom to modern-day choices, our discussions challenge you to think beyond the mainstream and embrace alternative perspectives. If you've ever felt like flying north while the world turns south, you've found your flock."},
+		},
+		ThumbnailURL: "/images/projects/flyingupstream.webp", SortOrder: 2, Status: models.StatusPublished,
+	},
+	{
+		ID: "4", Slug: "future-of-the-bay-kqed-special", Title: "Future of the Bay- KQED Special", PublishedAt: "2025-09-15",
+		Client: "KQED", Role: "Reporter and Audio Editor",
+		Summary: "Featured on KQED Radio (343,000 average weekly listeners)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Curious about what young people think about the future of our region? Every year, students from San Francisco State University grab microphone kits in search of stories that matter to them. They dive deep into the heart of the Bay’s diverse communities and explore pressing issues that will remain relevant in the years to come. From a jazz-loving church, to firefighting goats, to a marine lab’s fight for survival, students share unexpected stories and amplify diverse voices in this special report, “The Future of the Bay.”"},
+		},
+		ThumbnailURL: "/images/projects/future-of-the-bay-kqed-special.jpg", SortOrder: 3, Status: models.StatusPublished,
+	},
+	{
+		ID: "5", Slug: "holi-celebration-pyarful", Title: "Holi Celebration- Pyarful", PublishedAt: "2025-03-21",
+		Client: "Pyarful", Role: "Editor & Videographer",
+		Summary: "Featured on Pyarful’s Instagram (30.5K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "A showing of Pyarful’s Truck Tea Towel being used to wrap flowers. Made just in time for Holi, the Festival of Colors."},
+			{"type": "link", "url": "https://www.instagram.com/reel/DHJrIjZSKTz/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", "label": "Watch Here"},
+		},
+		ThumbnailURL: "/images/projects/holi-celebration-pyarful.webp", SortOrder: 4, Status: models.StatusPublished,
+	},
+	{
+		ID: "6", Slug: "founder-introduction-pyarful", Title: "Founder Introduction- Pyarful", PublishedAt: "2025-03-21",
+		Client: "Pyarful", Role: "Editor & Videographer",
+		Summary: "Featured on Pyarful’s Instagram (30.5K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Krisa is the founder and illustrator behind Pyarful. A mother of two, she is passionate about sharing her South Asian culture. In 2018, she left her tech career of nearly a decade to create greeting cards. What started as just eight small greeting cards has since grown into the whimsical and joyful brand seen today, offering stationery, homewares, and more."},
+			{"type": "link", "url": "https://www.instagram.com/reel/DFqWgzdyrw5/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", "label": "Watch Here"},
+		},
+		ThumbnailURL: "/images/projects/founder-introduction-pyarful.jpg", SortOrder: 5, Status: models.StatusPublished,
+	},
+	{
+		ID: "7", Slug: "biodiversitypge", Title: "Biodiversity and Climate Optimist at Heart- PG&E", PublishedAt: "2025-03-18",
+		Client: "BAVC Media", Role: "Editor",
+		Summary: "Featured on PG&E’s YouTube (35.8K subscribers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Partnered with PG&E"},
+			{"type": "paragraph", "text": "Tackling the impact of climate change is going to take all of us. Tanya Rivas is building a vision on how we can coexist with the needs of the plants and animals around us. Tanya is from American Canyon, studying Ecology, Evolution and Biodiversity at UC Davis."},
+			{"type": "embed", "url": "https://youtu.be/eq6bDsFdjnA", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/biodiversitypge.jpg", SortOrder: 6, Status: models.StatusPublished,
+	},
+	{
+		ID: "8", Slug: "techwomen-pge", Title: "TechWomen- PG&E", PublishedAt: "2025-01-15",
+		Client: "BAVC Media Partnered with PG&E", Role: "Editor",
+		Summary: "Featured on PG&E’s Instagram (24K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "PG&E participates in the TechWomen program, in partnership with the U.S. Department of State, so that PG&E teams and energy officials from across the world can work together and collaborate."},
+			{"type": "link", "url": "https://www.instagram.com/reel/DDXsYTtzPok/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==", "label": "Watch Here"},
+		},
+		ThumbnailURL: "/images/projects/techwomen-pge.jpg", SortOrder: 7, Status: models.StatusPublished,
+	},
+	{
+		ID: "9", Slug: "salutingbranches", Title: "Saluting Branches- PG&E", PublishedAt: "2024-11-04",
+		Client: "BAVC Media Partnered with PG&E", Role: "Editor",
+		Summary: "Featured on PG&E’s YouTube (35.2K subscribers) and Instagram (24K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "PG&E coworker volunteers participate in Saluting Branches, a one-day annual event where volunteers visit national veteran cemeteries to care for trees and landscape."},
+			{"type": "embed", "url": "https://youtube.com/shorts/OhKzEKn3jOs", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/salutingbranches.jpg", SortOrder: 8, Status: models.StatusPublished,
+	},
+	{
+		ID: "10", Slug: "beautification-pge", Title: "Beautification- PG&E", PublishedAt: "2024-11-04",
+		Client: "BAVC Media Partnered with PG&E", Role: "Editor",
+		Summary: "Featured on PG&E’s YouTube (35.2K subscribers) and Instagram (24K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "PG&E volunteers get their hands dirty at schools to get them ready and looking nice for the start of the school year."},
+			{"type": "embed", "url": "https://youtube.com/shorts/r2M18yIpaAY", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/beautification-pge.jpg", SortOrder: 9, Status: models.StatusPublished,
+	},
+	{
+		ID: "11", Slug: "kqedanimalshelter", Title: "Inside a No-Kill Animal Shelter- KQED", PublishedAt: "2024-09-27",
+		Client: "KQED", Role: "Director, Creative Collaborator",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Join us on a wild adventure as we explore the ultimate animal rescue shelter in San Francisco! Watch contestants spin the wheel, answer quiz questions, and meet adorable furry friends. Don’t forget to subscribe for more wholesome content like this!"},
+			{"type": "embed", "url": "https://youtu.be/UeB-LalwVk8", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/kqedanimalshelter.jpg", SortOrder: 10, Status: models.StatusPublished,
+	},
+	{
+		ID: "12", Slug: "comrade-is-my-pronoun", Title: "Comrade is My Pronoun", PublishedAt: "2024-09-27",
+		Client: "BAVC Media", Role: "Cinematographer, Editor",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "“Comrade Is My Pronoun” explores the legacy of The Black Panther Party up close with former chairwoman Elaine Brown. We discuss what radical liberation looks like, and what it means to be in solidarity."},
+			{"type": "embed", "url": "https://youtu.be/GVqtoBQuNCA", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/comrade-is-my-pronoun.jpg", SortOrder: 11, Status: models.StatusPublished,
+	},
+	{
+		ID: "13", Slug: "kqed", Title: "Things to Do at Dolores Park This Summer- KQED", PublishedAt: "2024-09-27",
+		Client: "KQED", Role: "Producer, Cinematographer, Editor",
+		Summary: "Featured on KQED's main Instagram account (175K followers)",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Fun times at Dolores Park! From tennis and sunshine to the playground, there's something for everyone."},
+		},
+		ThumbnailURL: "/images/projects/kqed.jpg", SortOrder: 12, Status: models.StatusPublished,
+	},
+	{
+		ID: "14", Slug: "chabotfireacademy", Title: "Chabot Fire Academy", PublishedAt: "2021-08-05",
+		Client:  "Chabot-Las Positas Community College",
+		Role:    "Producer, Director, Cinematographer, Interviewer, and Sound Editor",
+		Summary: "Best Documentary at the 2023 Chabot Film & Animation Festival",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "A look into the students of Chabot College’s Fire Tech Academy."},
+		},
+		ThumbnailURL: "/images/projects/chabotfireacademy.jpg", SortOrder: 13, Status: models.StatusPublished,
+	},
+	{
+		ID: "15", Slug: "gorast-droll", Title: "Gorast Droll", PublishedAt: "2021-08-04",
+		Client: "Chabot-Las Positas Community College", Role: "Producer, Cinematographer, Writer, and Editor",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "Jessie’s discovery uncovers a viscous monster that forces them to fight for their life."},
+			{"type": "embed", "url": "https://youtu.be/GrG66w4Tvyw", "provider": "youtube"},
+		},
+		ThumbnailURL: "/images/projects/gorast-droll.jpg", SortOrder: 14, Status: models.StatusPublished,
+	},
+	{
+		ID: "16", Slug: "city-surf-project", Title: "City Surf Project", PublishedAt: "2021-07-30",
+		Client: "San Francisco State University", Role: "Producer, Cinematographer, Editor",
+		Body: []models.RichTextBlock{
+			{"type": "paragraph", "text": "City Surf Project introduces San Francisco high schoolers to surfing for free. This is the story of one of many SF high school surfers."},
+			{"type": "link", "url": "https://drive.google.com/file/d/1t2ZEpeIL_ay3-qxjskiSMBNYWAR2jAWJ/view?usp=sharing", "label": "Watch Here"},
+		},
+		ThumbnailURL: "/images/projects/city-surf-project.jpg", SortOrder: 15, Status: models.StatusPublished,
+	},
+}
