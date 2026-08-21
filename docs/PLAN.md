@@ -523,9 +523,9 @@ async function requireAdmin(req, res, next) {
 Log admin actions for accountability:
 
 ```
-{ action: 'project.update', projectId, userId, timestamp, diff }
-{ action: 'project.publish', projectId, userId, timestamp }
-{ action: 'project.reorder', userId, timestamp, newOrder }
+{ action: 'project.update', projectId, userEmail, userDisplayName, timestamp, diff }
+{ action: 'project.publish', projectId, userEmail, userDisplayName, timestamp }
+{ action: 'project.reorder', userEmail, userDisplayName, timestamp, newOrder }
 ```
 
 ---
@@ -629,28 +629,36 @@ S3_SECRET_KEY=...
 ### 9.1 Database schema (custom backend option)
 
 Schema lives as **Supabase CLI migrations** (`supabase/migrations/*.sql`); Go
-query code is generated from it with **sqlc** (`api/internal/db/query.sql` →
-generated structs/methods using `pgx/v5`). Not yet scaffolded — planned for
-Phase 2 (Section 10) alongside auth.
+query code is generated from it with **sqlc** (`api/internal/db/queries/*.sql` →
+generated structs/methods using `pgx/v5`). Scaffolded in Phase 2 — see
+`api/README.md` (Database section) and `make -C api sqlc` / `make -C api seed`.
+Auth, media upload, and draft/publish writes are still outstanding.
 
 ```sql
 -- projects
 CREATE TABLE projects (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug        TEXT UNIQUE NOT NULL,
+  slug        TEXT NOT NULL,  -- unique among non-deleted rows (partial unique index)
   title       TEXT NOT NULL,
-  role        TEXT,
-  summary     TEXT,
-  body        JSONB,           -- rich text blocks
-  thumbnail_url TEXT,
+  client      TEXT NOT NULL DEFAULT '',
+  role        TEXT NOT NULL DEFAULT '',
+  summary     TEXT NOT NULL DEFAULT '',
+  body        JSONB NOT NULL DEFAULT '[]'::jsonb,
+  thumbnail_url TEXT NOT NULL DEFAULT '',
   sort_order  INT NOT NULL DEFAULT 0,
-  status      TEXT NOT NULL DEFAULT 'draft',  -- draft | published
+  status      TEXT NOT NULL DEFAULT 'draft'
+                CHECK (status IN ('draft', 'published')),
   published_at TIMESTAMPTZ,
-  created_at  TIMESTAMPTZ DEFAULT now(),
-  updated_at  TIMESTAMPTZ DEFAULT now()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at  TIMESTAMPTZ,  -- soft delete for edit-mode undo
+  created_by_email TEXT NOT NULL DEFAULT '',
+  created_by_display_name TEXT NOT NULL DEFAULT '',
+  updated_by_email TEXT NOT NULL DEFAULT '',
+  updated_by_display_name TEXT NOT NULL DEFAULT ''
 );
 
--- about page (singleton)
+-- about page (singleton) + future site-wide knobs
 CREATE TABLE site_settings (
   key   TEXT PRIMARY KEY,
   value JSONB NOT NULL
@@ -661,11 +669,16 @@ CREATE TABLE site_settings (
 CREATE TABLE audit_log (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_email TEXT NOT NULL,
+  user_display_name TEXT NOT NULL DEFAULT '',
   action     TEXT NOT NULL,
   payload    JSONB,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
+
+> **Deferred:** a `media` table for editor-uploaded images (thumbnails / body
+> images in object storage). Videos stay as YouTube/Vimeo/Drive links in
+> `projects.body`. Add `media` when image upload lands.
 
 ### 9.2 Content migration from Squarespace
 
@@ -708,9 +721,9 @@ node scripts/migrate-from-squarespace.ts
 
 ### Phase 2 — Backend & auth (1–2 weeks)
 
-- [ ] Create Supabase project; scaffold `supabase/` CLI migrations for the schema in Section 9.1
-- [ ] Set up sqlc (`sqlc.yaml`, `query.sql`) generating against `pgx/v5`; wire `internal/db` into the API
-- [ ] Database + API routes for projects and about page
+- [x] Scaffold `supabase/` CLI migrations for the schema in Section 9.1 (hosted Supabase project still to be linked)
+- [x] Set up sqlc (`api/sqlc.yaml`, `api/internal/db/queries`) generating against `pgx/v5`; wire `internal/db` + `internal/store` into the API
+- [x] Database-backed public GET routes for projects and about page (Postgres when `API_DATABASE_URL` is set; in-memory stubs otherwise)
 - [ ] Admin authentication (magic link or OAuth)
 - [ ] Media upload pipeline
 - [ ] Draft/publish workflow
@@ -768,8 +781,8 @@ node scripts/migrate-from-squarespace.ts
 Exact titles, dates, and slugs, in the same reverse-chronological order the
 live site displays them (resolved from `sitemap.xml` + each project page's
 `<title>`, since Squarespace's auto-generated slugs for renamed projects
-don't match their titles). Seeded into `api/internal/api/projects.go` as
-`stubProjects`.
+don't match their titles). Seeded into `api/internal/store/stubs_projects.go`
+(and upserted via `make -C api seed`).
 
 | # | Title | Published | Slug (ours) |
 |---|-------|-----------|--------------|
@@ -801,7 +814,8 @@ instead.
 Roles, summaries, body copy, and thumbnails for all 16 projects are now
 migrated from the reference site's detail pages (including embedded
 YouTube videos and outbound "Watch Here" links to Instagram/Google Drive
-for content that can't be embedded inline).
+for content that can't be embedded inline). Stub datasets live in
+`api/internal/store/stubs_*.go` (in-memory fallback + `make seed` source).
 
 ---
 
@@ -855,14 +869,19 @@ pnpm migrate
 # Deploy (Vercel for ui, Fly.io/Railway for the Go api)
 vercel --prod
 
-# --- Phase 2 (not yet scaffolded) ---
-# Supabase: local Postgres + new schema migration
+# --- Phase 2 ---
+# Supabase: local Postgres + schema migrations (requires Docker)
 supabase start
-supabase migration new <name>
-supabase db push
+supabase db reset          # apply migrations; then:
+# export API_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+# make -C api seed
 
 # sqlc: regenerate Go query code after editing schema/queries
-cd api && sqlc generate
+cd api && make sqlc
+
+# Migrations on main are applied by GitHub Actions
+# (.github/workflows/supabase-migrations.yml) once repo secrets are set —
+# see api/README.md "Automating migrations (CI)".
 ```
 
 ---

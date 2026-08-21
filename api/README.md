@@ -27,6 +27,8 @@ file → environment variables. See `internal/config/app-config.go`.
 | `API_ENV` | `env` | `development` | Runtime environment |
 | `API_PORT` | `port` | `4000` | HTTP listen port |
 | `API_CORS_ORIGIN` | `cors_origin` | `http://localhost:5173` | Allowed origin for browser requests from `ui` |
+| `API_DATABASE_URL` | `database_url` | _(empty)_ | Postgres connection string. When unset, the API serves in-memory stub content. |
+| `DATABASE_URL` | `database_url` (fallback) | — | Unprefixed Supabase/PaaS URL used only when `API_DATABASE_URL` is empty. |
 | `PORT` | `port` (override) | — | Unprefixed port assigned by PaaS hosts (Vercel, Railway, Render, Fly). Takes precedence over `API_PORT` when set. |
 
 Create `config/app-config.yml` (gitignored) with any of the keys above to
@@ -49,18 +51,68 @@ over the file.
 | `GET` | `/api/projects/{slug}` | Get a single project |
 | `GET` | `/api/pages/about` | Get the About Me page content |
 
-Data is currently in-memory stub data (`internal/api/projects.go`,
-`internal/api/about.go`) until Phase 2 (database + auth) lands per
-`docs/PLAN.md` Section 10.
+With no database URL configured, handlers serve the Phase 1 in-memory stubs
+in `internal/store`. With `API_DATABASE_URL` set (after migrations + seed),
+handlers read from Postgres via sqlc (`internal/db`). Auth / edit-mode writes
+are still Phase 2 follow-ups — see `docs/PLAN.md` Section 10.
+
+## Database (Phase 2)
+
+Schema migrations live in [`supabase/migrations`](../supabase/migrations)
+(managed by the [Supabase CLI](https://supabase.com/docs/guides/cli)).
+Query code is generated with [sqlc](https://sqlc.dev/) into `internal/db`
+(`make sqlc`). Generated files are committed so CI does not need sqlc.
+
+Local flow (requires Docker for `supabase start`):
+
+```bash
+# from repo root
+supabase start                 # local Postgres on :54322
+supabase db reset              # apply migrations (+ empty seed.sql)
+export API_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+make -C api seed               # upsert stub projects + about page
+pnpm dev:api                   # API reads from Postgres
+```
+
+Without Docker / a remote Supabase project, omit `API_DATABASE_URL` and the
+API keeps serving in-memory stubs (same JSON shape).
+
+When `API_DATABASE_URL` (or `DATABASE_URL`) **is** set, the process
+`Ping`s Postgres during startup (10s timeout) and exits if unreachable —
+it will not start listening on a bad connection.
+
+### Automating migrations (CI)
+
+New files under `supabase/migrations/` are handled by
+[`.github/workflows/supabase-migrations.yml`](../.github/workflows/supabase-migrations.yml)
+(aligned with [Supabase’s environment guide](https://supabase.com/docs/guides/deployment/managing-environments)):
+
+| Event | Behavior |
+|-------|----------|
+| PR touching migrations | `supabase db start` — apply all migrations to a local CI Postgres (no remote secrets) |
+| Push to `main` touching migrations | `supabase link` + `supabase db push` — apply to the hosted project |
+| Manual **Run workflow** | Same as main (apply to remote) |
+
+Add these GitHub Actions secrets before **main** deploys can run (PRs do not need them):
+
+| Secret | Where to get it |
+|--------|------------------|
+| `SUPABASE_ACCESS_TOKEN` | [Account → Access Tokens](https://supabase.com/dashboard/account/tokens) |
+| `SUPABASE_PROJECT_ID` | Project Settings → General (project ref) |
+| `SUPABASE_DB_PASSWORD` | Project Settings → Database |
 
 ## Structure
 
 ```
-cmd/api/main.go       # entrypoint
+cmd/api/main.go       # HTTP server entrypoint
+cmd/seed/main.go      # upsert stub content into Postgres
 config/               # app-config.yml (gitignored, optional local overrides)
+sqlc.yaml             # sqlc config (schema = supabase/migrations)
 internal/api/         # HTTP handlers, router, CORS middleware
 internal/config/      # koanf-based config loading
+internal/db/          # sqlc-generated queries (pgx/v5)
 internal/models/      # Project, AboutPage structs (mirror shared/)
+internal/store/       # content Store (memory stubs + Postgres)
 ```
 
 ## Build
@@ -85,6 +137,9 @@ preset explicitly supports.
      `"framework": "go"`, since it finds `go.mod` + `cmd/api/main.go`)
 2. Set environment variables on the API project:
    - `API_CORS_ORIGIN` = the deployed `ui` origin, e.g. `https://mariamecoulibaly.vercel.app`
+   - `API_DATABASE_URL` = Supabase (or other Postgres) connection string once
+     migrations are applied and content is seeded (optional until then —
+     stubs are used when unset)
    - `API_ENV=production` (optional)
    - Vercel sets `PORT` automatically — the server honors it (see
      Configuration table above); don't set `API_PORT` in production.
@@ -100,6 +155,8 @@ All commands run from the `api/` directory (or via `make -C api <target>`):
 |---------|--------------|
 | `make dev` | Run the server with `go run` |
 | `make build` | Build the binary to `bin/api` |
+| `make sqlc` | Regenerate `internal/db` from `sqlc.yaml` + migrations + queries |
+| `make seed` | Upsert stub projects + about page (`API_DATABASE_URL` required) |
 | `make fmt` | Format code with `golangci-lint fmt` (gofmt + goimports) |
 | `make fmt-check` | Fail if any file isn't formatted (used in CI) |
 | `make vet` | `go vet` |
@@ -108,11 +165,13 @@ All commands run from the `api/` directory (or via `make -C api <target>`):
 | `make release-snapshot` | Build all release artifacts locally with [GoReleaser](https://goreleaser.com/) without publishing |
 | `make release` | Publish a real release (CI only; needs a `api/vX.Y.Z` tag + `GITHUB_TOKEN`) |
 
-Install the linter and releaser locally with:
+Install the linter, releaser, and sqlc locally with:
 
 ```bash
 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 go install github.com/goreleaser/goreleaser/v2@latest
+go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+# Supabase CLI: https://supabase.com/docs/guides/cli/getting-started
 ```
 
 ### Releasing
