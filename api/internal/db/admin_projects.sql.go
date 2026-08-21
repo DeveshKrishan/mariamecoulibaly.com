@@ -287,6 +287,7 @@ func (q *Queries) SoftDeleteProjectBySlug(ctx context.Context, arg SoftDeletePro
 
 const updateProjectBySlug = `-- name: UpdateProjectBySlug :one
 UPDATE projects SET
+  slug = $1,
   title = $2,
   client = $3,
   role = $4,
@@ -299,7 +300,7 @@ UPDATE projects SET
   updated_by_email = $11,
   updated_by_display_name = $12,
   updated_at = now()
-WHERE slug = $1
+WHERE slug = $13
   AND deleted_at IS NULL
 RETURNING
   id,
@@ -323,7 +324,7 @@ RETURNING
 `
 
 type UpdateProjectBySlugParams struct {
-	Slug                 string             `json:"slug"`
+	NewSlug              string             `json:"new_slug"`
 	Title                string             `json:"title"`
 	Client               string             `json:"client"`
 	Role                 string             `json:"role"`
@@ -335,11 +336,12 @@ type UpdateProjectBySlugParams struct {
 	PublishedAt          pgtype.Timestamptz `json:"published_at"`
 	UpdatedByEmail       string             `json:"updated_by_email"`
 	UpdatedByDisplayName string             `json:"updated_by_display_name"`
+	Slug                 string             `json:"slug"`
 }
 
 func (q *Queries) UpdateProjectBySlug(ctx context.Context, arg UpdateProjectBySlugParams) (Project, error) {
 	row := q.db.QueryRow(ctx, updateProjectBySlug,
-		arg.Slug,
+		arg.NewSlug,
 		arg.Title,
 		arg.Client,
 		arg.Role,
@@ -351,6 +353,7 @@ func (q *Queries) UpdateProjectBySlug(ctx context.Context, arg UpdateProjectBySl
 		arg.PublishedAt,
 		arg.UpdatedByEmail,
 		arg.UpdatedByDisplayName,
+		arg.Slug,
 	)
 	var i Project
 	err := row.Scan(

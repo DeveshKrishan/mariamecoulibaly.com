@@ -18,7 +18,7 @@ var ErrNotFound = errors.New("not found")
 // ErrReadOnly is returned when an admin write is attempted against the memory store.
 var ErrReadOnly = errors.New("store is read-only")
 
-// ErrConflict is returned when creating a project whose slug already exists.
+// ErrConflict is returned when creating or renaming a project to a slug that already exists.
 var ErrConflict = errors.New("conflict")
 
 // Actor is the admin performing a mutation (for attribution + audit).

@@ -87,19 +87,20 @@ RETURNING
 
 -- name: UpdateProjectBySlug :one
 UPDATE projects SET
-  title = $2,
-  client = $3,
-  role = $4,
-  summary = $5,
-  body = $6,
-  thumbnail_url = $7,
-  sort_order = $8,
-  status = $9,
-  published_at = $10,
-  updated_by_email = $11,
-  updated_by_display_name = $12,
+  slug = sqlc.arg(new_slug),
+  title = sqlc.arg(title),
+  client = sqlc.arg(client),
+  role = sqlc.arg(role),
+  summary = sqlc.arg(summary),
+  body = sqlc.arg(body),
+  thumbnail_url = sqlc.arg(thumbnail_url),
+  sort_order = sqlc.arg(sort_order),
+  status = sqlc.arg(status),
+  published_at = sqlc.arg(published_at),
+  updated_by_email = sqlc.arg(updated_by_email),
+  updated_by_display_name = sqlc.arg(updated_by_display_name),
   updated_at = now()
-WHERE slug = $1
+WHERE slug = sqlc.arg(slug)
   AND deleted_at IS NULL
 RETURNING
   id,

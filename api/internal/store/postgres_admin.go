@@ -126,9 +126,15 @@ func (p *Postgres) UpdateProject(ctx context.Context, actor Actor, slug string, 
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
+	newSlug := in.Slug
+	if newSlug == "" {
+		newSlug = slug
+	}
+
 	q := p.queries.WithTx(tx)
 	row, err := q.UpdateProjectBySlug(ctx, db.UpdateProjectBySlugParams{
 		Slug:                 slug,
+		NewSlug:              newSlug,
 		Title:                in.Title,
 		Client:               in.Client,
 		Role:                 in.Role,
@@ -145,10 +151,13 @@ func (p *Postgres) UpdateProject(ctx context.Context, actor Actor, slug string, 
 		return nil, ErrNotFound
 	}
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrConflict
+		}
 		return nil, fmt.Errorf("update project %q: %w", slug, err)
 	}
 
-	payload, _ := json.Marshal(map[string]any{"slug": slug})
+	payload, _ := json.Marshal(map[string]any{"slug": slug, "newSlug": newSlug})
 	if _, err := q.InsertAuditLog(ctx, db.InsertAuditLogParams{
 		UserEmail:       actor.Email,
 		UserDisplayName: actor.DisplayName,

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';
 import { EditableField } from '../edit/EditableField';
+import { EditableSlug } from '../edit/EditableSlug';
 import {
   deleteProject,
   projectToWritePayload,
@@ -80,6 +81,26 @@ export function ProjectDetail({
     }
   }
 
+  async function saveSlug(next: string) {
+    if (!accessToken || !onProjectChange || next === project.slug) return;
+    const previous = project;
+    const optimistic = { ...project, slug: next };
+    onProjectChange(optimistic);
+    try {
+      const updated = await runSave(() =>
+        updateProject(
+          project.slug,
+          projectToWritePayload(optimistic),
+          accessToken,
+        ),
+      );
+      onProjectChange(updated);
+      navigate(`/projects/${updated.slug}?edit=1`, { replace: true });
+    } catch {
+      onProjectChange(previous);
+    }
+  }
+
   async function handleDelete() {
     if (!accessToken) return;
     if (!window.confirm(`Soft-delete project “${project.slug}”?`)) return;
@@ -126,6 +147,12 @@ export function ProjectDetail({
         ) : (
           <h1 className="mb-3 text-3xl md:text-4xl">{project.title}</h1>
         )}
+        {editMode ? (
+          <EditableSlug
+            value={project.slug}
+            onSave={(v) => void saveSlug(v)}
+          />
+        ) : null}
         <EditableDate
           value={project.publishedAt}
           editMode={editMode}
