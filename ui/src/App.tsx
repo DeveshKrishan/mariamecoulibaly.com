@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Route, Routes } from 'react-router-dom';
 import { EditToolbar } from './components/edit/EditToolbar';
 import { PageLayout } from './components/layout/PageLayout';
@@ -18,6 +19,7 @@ function App() {
       </Routes>
       <EditToolbar />
       <Analytics />
+      <SpeedInsights />
     </PageLayout>
   );
 }
