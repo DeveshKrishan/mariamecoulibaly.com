@@ -1,5 +1,5 @@
 import type { AboutPage as AboutPageData } from '../types/content';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -74,13 +74,11 @@ describe('AboutPage link editing', () => {
   });
 
   it('edits link label on blur', async () => {
-    const user = userEvent.setup();
     renderAbout();
 
     const label = await screen.findByLabelText('Link 1 label');
-    await user.clear(label);
-    await user.type(label, 'CV');
-    await user.tab();
+    fireEvent.change(label, { target: { value: 'CV' } });
+    fireEvent.blur(label);
 
     await waitFor(() => {
       expect(updateAboutPage).toHaveBeenCalledWith(
@@ -96,13 +94,11 @@ describe('AboutPage link editing', () => {
   });
 
   it('edits link url on blur', async () => {
-    const user = userEvent.setup();
     renderAbout();
 
     const url = await screen.findByLabelText('Link 1 URL');
-    await user.clear(url);
-    await user.type(url, 'https://example.com/cv');
-    await user.tab();
+    fireEvent.change(url, { target: { value: 'https://example.com/cv' } });
+    fireEvent.blur(url);
 
     await waitFor(() => {
       expect(updateAboutPage).toHaveBeenCalledWith(

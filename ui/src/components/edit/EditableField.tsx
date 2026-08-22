@@ -3,6 +3,7 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
+  type FocusEvent,
 } from 'react';
 
 type EditableFieldProps = {
@@ -62,9 +63,13 @@ export function EditableField({
       .join(' '),
     onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setDraft(e.target.value),
-    onBlur: () => {
-      if (draft !== value) {
-        void onSave(draft);
+    onBlur: (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      // Read from the DOM — draft state may still be stale if blur follows
+      // a change in the same tick (common in tests and fast tab navigation).
+      const next = e.target.value;
+      setDraft(next);
+      if (next !== value) {
+        void onSave(next);
       }
     },
   };
