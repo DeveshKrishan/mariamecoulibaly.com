@@ -1,8 +1,9 @@
 import type { Project, RichTextBlock } from '@mariame/shared';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../../lib/auth';
 import { EditModeProvider } from '../../lib/editMode';
 import { ProjectBody } from './ProjectBody';
@@ -13,14 +14,41 @@ vi.mock('../../lib/supabase', () => ({
   supabase: null,
 }));
 
+const updateProject = vi.fn();
+
+vi.mock('../../lib/api', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
+  return {
+    ...actual,
+    updateProject: (...args: unknown[]) => updateProject(...args),
+  };
+});
+
+vi.mock('../../lib/auth', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../lib/auth')>('../../lib/auth');
+  return {
+    ...actual,
+    useAuth: () => ({
+      accessToken: 'tok',
+      isAdmin: true,
+      user: { email: 'a@b.com', displayName: 'A' },
+      signInWithGoogle: vi.fn(),
+      signOut: vi.fn(),
+      isLoading: false,
+    }),
+  };
+});
+
 const siteUrl = (
   import.meta.env.VITE_SITE_URL ??
   'https://mariamecoulibaly-com-ui.vercel.app'
 ).replace(/\/+$/, '');
 
-function renderDetail(ui: ReactElement) {
+function renderDetail(ui: ReactElement, edit = false) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[edit ? '/projects/x?edit=1' : '/projects/x']}>
       <AuthProvider>
         <EditModeProvider>{ui}</EditModeProvider>
       </AuthProvider>
@@ -87,6 +115,10 @@ describe('ProjectBody', () => {
 });
 
 describe('ProjectDetail', () => {
+  beforeEach(() => {
+    updateProject.mockReset();
+  });
+
   it('renders title, date, meta lines, body, and next project link', () => {
     renderDetail(
       <ProjectDetail
@@ -233,5 +265,57 @@ describe('ProjectDetail', () => {
       'content',
       'Resident Home, a project by Mariam Coulibaly.',
     );
+  });
+
+  it('publishes a draft from edit mode', async () => {
+    const user = userEvent.setup();
+    const onProjectChange = vi.fn();
+    updateProject.mockResolvedValue({
+      ...baseProject,
+      status: 'published',
+    });
+
+    renderDetail(
+      <ProjectDetail
+        project={{ ...baseProject, status: 'draft' }}
+        onProjectChange={onProjectChange}
+        previous={null}
+        next={null}
+      />,
+      true,
+    );
+
+    expect(
+      screen.getByText('Draft — not visible on the public site'),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Publish' }));
+    expect(updateProject).toHaveBeenCalled();
+    const payload = updateProject.mock.calls[0]?.[1] as { status: string };
+    expect(payload.status).toBe('published');
+  });
+
+  it('unpublishes a live project from edit mode', async () => {
+    const user = userEvent.setup();
+    updateProject.mockResolvedValue({
+      ...baseProject,
+      status: 'draft',
+    });
+
+    renderDetail(
+      <ProjectDetail
+        project={baseProject}
+        onProjectChange={vi.fn()}
+        previous={null}
+        next={null}
+      />,
+      true,
+    );
+
+    expect(
+      screen.getByText('Published — visible on the public site'),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Unpublish' }));
+    const payload = updateProject.mock.calls[0]?.[1] as { status: string };
+    expect(payload.status).toBe('draft');
   });
 });

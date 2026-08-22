@@ -113,6 +113,35 @@ export function ProjectDetail({
     }
   }
 
+  async function handleTogglePublish() {
+    if (!accessToken || !onProjectChange) return;
+    const nextStatus =
+      project.status === 'published' ? 'draft' : 'published';
+    const nextPublishedAt =
+      nextStatus === 'published' && !project.publishedAt.trim()
+        ? new Date().toISOString().slice(0, 10)
+        : project.publishedAt;
+    const previous = project;
+    const optimistic = {
+      ...project,
+      status: nextStatus,
+      publishedAt: nextPublishedAt,
+    };
+    onProjectChange(optimistic);
+    try {
+      const updated = await runSave(() =>
+        updateProject(
+          project.slug,
+          projectToWritePayload(optimistic),
+          accessToken,
+        ),
+      );
+      onProjectChange(updated);
+    } catch {
+      onProjectChange(previous);
+    }
+  }
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 12 }}
@@ -137,13 +166,22 @@ export function ProjectDetail({
               inputClassName="font-heading text-3xl md:text-4xl px-1"
               aria-label="Project title"
             />
-            <button
-              type="button"
-              onClick={() => void handleDelete()}
-              className="shrink-0 border border-red-300 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
-            >
-              Delete project
-            </button>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void handleTogglePublish()}
+                className="border border-ink px-3 py-1.5 text-xs tracking-wide hover:bg-ink hover:text-white"
+              >
+                {project.status === 'published' ? 'Unpublish' : 'Publish'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                className="border border-red-300 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
+              >
+                Delete project
+              </button>
+            </div>
           </div>
         ) : (
           <h1 className="mb-3 text-3xl md:text-4xl">{project.title}</h1>
@@ -162,9 +200,11 @@ export function ProjectDetail({
           inputClassName="mb-6 block text-sm opacity-70 px-1"
           aria-label="Project date"
         />
-        {editMode && project.status === 'draft' ? (
+        {editMode ? (
           <p className="mb-4 text-xs tracking-wide text-ink/60 uppercase">
-            Draft — not visible on the public site
+            {project.status === 'draft'
+              ? 'Draft — not visible on the public site'
+              : 'Published — visible on the public site'}
           </p>
         ) : null}
       </header>
