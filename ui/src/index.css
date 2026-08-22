@@ -85,3 +85,31 @@ a {
 .project-cta:hover::before {
   clip-path: polygon(-2% -2%, 102% -2%, 102% 102%, -2% 102%);
 }
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-block {
+  background: linear-gradient(
+    90deg,
+    rgb(229 229 229) 0%,
+    rgb(245 245 245) 45%,
+    rgb(229 229 229) 90%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block {
+    animation: none;
+    background: rgb(229 229 229);
+  }
+}
