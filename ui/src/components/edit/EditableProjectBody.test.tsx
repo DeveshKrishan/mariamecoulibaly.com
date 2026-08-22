@@ -112,4 +112,93 @@ describe('EditableProjectBody', () => {
     ).toHaveTextContent(/max 20 MB/i);
     expect(uploadProjectImage).not.toHaveBeenCalled();
   });
+
+  it('edits link CTA label and url on blur', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    renderEditor(onSave, [
+      {
+        type: 'link',
+        url: 'https://example.com/watch',
+        label: 'Watch Here',
+      },
+    ]);
+
+    const label = screen.getByLabelText('Link button text');
+    await user.clear(label);
+    await user.type(label, 'Listen Here');
+    await user.tab();
+
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        type: 'link',
+        url: 'https://example.com/watch',
+        label: 'Listen Here',
+      },
+    ]);
+
+    onSave.mockClear();
+    const url = screen.getByLabelText('Link URL');
+    await user.clear(url);
+    await user.type(url, 'https://example.com/listen');
+    await user.tab();
+
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        type: 'link',
+        url: 'https://example.com/listen',
+        label: 'Listen Here',
+      },
+    ]);
+  });
+
+  it('migrates legacy embed blocks to link on edit', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    renderEditor(onSave, [
+      { type: 'embed', url: 'https://youtu.be/abc' },
+    ]);
+
+    expect(screen.getByText('link (legacy embed)')).toBeInTheDocument();
+    const label = screen.getByLabelText('Link button text');
+    expect(label).toHaveValue('Watch Here');
+
+    await user.clear(label);
+    await user.type(label, 'Watch Now');
+    await user.tab();
+
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        type: 'link',
+        url: 'https://youtu.be/abc',
+        label: 'Watch Now',
+      },
+    ]);
+  });
+
+  it('adds and removes link blocks', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    renderEditor(onSave, [
+      {
+        type: 'link',
+        url: 'https://example.com/a',
+        label: 'Watch Here',
+      },
+    ]);
+
+    await user.click(screen.getByRole('button', { name: 'Add link' }));
+    expect(onSave).toHaveBeenCalledWith([
+      {
+        type: 'link',
+        url: 'https://example.com/a',
+        label: 'Watch Here',
+      },
+      { type: 'link', url: '', label: 'Watch Here' },
+    ]);
+
+    onSave.mockClear();
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(onSave).toHaveBeenCalledWith([]);
+  });
 });

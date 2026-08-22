@@ -1,4 +1,10 @@
-import type { ImageBlock, ParagraphBlock, RichTextBlock } from '../../types/content';
+import type {
+  EmbedBlock,
+  ImageBlock,
+  LinkBlock,
+  ParagraphBlock,
+  RichTextBlock,
+} from '../../types/content';
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   IMAGE_UPLOAD_HINT,
@@ -7,7 +13,6 @@ import {
 } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useEditMode } from '../../lib/editMode';
-import { ProjectBlock } from '../portfolio/ProjectBody';
 
 type EditableProjectBodyProps = {
   projectId: string;
@@ -23,25 +28,29 @@ function isImage(block: RichTextBlock): block is ImageBlock {
   return block.type === 'image';
 }
 
-/** Remount editors when the block identity at an index changes (e.g. reorder). */
+function isLink(block: RichTextBlock): block is LinkBlock {
+  return block.type === 'link';
+}
+
+function isEmbed(block: RichTextBlock): block is EmbedBlock {
+  return block.type === 'embed';
+}
+
+function isLinkLike(
+  block: RichTextBlock,
+): block is LinkBlock | EmbedBlock {
+  return isLink(block) || isEmbed(block);
+}
+
+/** Remount editors when the block *type* at an index changes (e.g. reorder).
+ * Do not include editable field values — that remounts mid-edit and drops focus. */
 function blockEditorKey(block: RichTextBlock, index: number): string {
-  switch (block.type) {
-    case 'paragraph':
-      return `paragraph-${index}-${block.text}`;
-    case 'image':
-      return `image-${index}-${block.url}-${block.alt ?? ''}-${block.href ?? ''}`;
-    case 'embed':
-      return `embed-${index}-${block.url}`;
-    case 'link':
-      return `link-${index}-${block.url}-${block.label}`;
-    default:
-      return `block-${index}`;
-  }
+  return `${block.type}-${index}`;
 }
 
 /**
- * Edit-mode body editor for paragraph + image blocks.
- * Link CTA blocks stay visible but read-only until that editor lands.
+ * Edit-mode body editor for paragraph, image, and link CTA blocks.
+ * Legacy `embed` blocks are edited as link CTAs and saved as `type: "link"`.
  */
 export function EditableProjectBody({
   projectId,
@@ -75,6 +84,10 @@ export function EditableProjectBody({
     void onSave([...body, { type: 'image', url: '', alt: '' }]);
   }
 
+  function addLink() {
+    void onSave([...body, { type: 'link', url: '', label: 'Watch Here' }]);
+  }
+
   return (
     <div className="mt-6 space-y-4">
       {body.length === 0 ? (
@@ -90,7 +103,7 @@ export function EditableProjectBody({
         >
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs tracking-wide text-ink/50 uppercase">
-              {block.type}
+              {isEmbed(block) ? 'link (legacy embed)' : block.type}
             </span>
             <div className="flex flex-wrap gap-1">
               <button
@@ -109,7 +122,7 @@ export function EditableProjectBody({
               >
                 Down
               </button>
-              {(isParagraph(block) || isImage(block)) && (
+              {(isParagraph(block) || isImage(block) || isLinkLike(block)) && (
                 <button
                   type="button"
                   className="border border-red-200 px-2 py-0.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
@@ -132,14 +145,12 @@ export function EditableProjectBody({
               block={block}
               onChange={(next) => updateAt(index, next)}
             />
-          ) : (
-            <div>
-              <p className="mb-2 text-xs text-ink/50">
-                Link CTA editing coming later — shown as published button.
-              </p>
-              <ProjectBlock block={block} />
-            </div>
-          )}
+          ) : isLinkLike(block) ? (
+            <LinkEditor
+              block={block}
+              onChange={(next) => updateAt(index, next)}
+            />
+          ) : null}
         </div>
       ))}
 
@@ -157,6 +168,13 @@ export function EditableProjectBody({
           className="border border-ink px-3 py-1.5 text-xs tracking-wide hover:bg-ink hover:text-white"
         >
           Add image
+        </button>
+        <button
+          type="button"
+          onClick={addLink}
+          className="border border-ink px-3 py-1.5 text-xs tracking-wide hover:bg-ink hover:text-white"
+        >
+          Add link
         </button>
       </div>
     </div>
@@ -190,6 +208,66 @@ function ParagraphEditor({
         }
       }}
     />
+  );
+}
+
+/**
+ * Link CTA editor (Watch Here / Listen Here). Saving always writes a
+ * `type: "link"` block so legacy embeds get migrated on first edit.
+ */
+function LinkEditor({
+  block,
+  onChange,
+}: {
+  block: LinkBlock | EmbedBlock;
+  onChange: (next: LinkBlock) => void;
+}) {
+  const initialLabel = isLink(block) ? block.label : 'Watch Here';
+  const [labelDraft, setLabelDraft] = useState(initialLabel);
+  const [urlDraft, setUrlDraft] = useState(block.url);
+
+  useEffect(() => {
+    setLabelDraft(initialLabel);
+    setUrlDraft(block.url);
+  }, [initialLabel, block.url]);
+
+  function commit(partial: { label?: string; url?: string }) {
+    const label = (partial.label ?? labelDraft).trim() || 'Watch Here';
+    const url = (partial.url ?? urlDraft).trim();
+    if (label === initialLabel && url === block.url && isLink(block)) return;
+    onChange({ type: 'link', label, url });
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="project-cta pointer-events-none w-fit mx-auto opacity-90">
+        {labelDraft.trim() || 'Watch Here'}
+      </p>
+      <label className="block text-xs tracking-wide text-ink/60">
+        Button text
+        <input
+          type="text"
+          value={labelDraft}
+          aria-label="Link button text"
+          className="mt-1 w-full bg-transparent px-1 py-1 text-sm outline outline-1 outline-ink/25 focus:outline-ink/60"
+          placeholder="Watch Here"
+          onChange={(e) => setLabelDraft(e.target.value)}
+          onBlur={() => commit({ label: labelDraft })}
+        />
+      </label>
+      <label className="block text-xs tracking-wide text-ink/60">
+        URL
+        <input
+          type="url"
+          value={urlDraft}
+          aria-label="Link URL"
+          className="mt-1 w-full bg-transparent px-1 py-1 text-sm outline outline-1 outline-ink/25 focus:outline-ink/60"
+          placeholder="https://…"
+          onChange={(e) => setUrlDraft(e.target.value)}
+          onBlur={() => commit({ url: urlDraft })}
+        />
+      </label>
+    </div>
   );
 }
 
