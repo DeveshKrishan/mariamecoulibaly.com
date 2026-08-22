@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../../types/content';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { EditableThumbnail } from '../edit/EditableThumbnail';

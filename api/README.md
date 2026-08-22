@@ -159,7 +159,7 @@ internal/api/         # HTTP handlers, router, CORS + admin auth middleware
 internal/auth/        # Supabase JWKS JWT verification + allowlist
 internal/config/      # koanf-based config loading
 internal/db/          # sqlc-generated queries (pgx/v5)
-internal/models/      # Project, AboutPage structs (mirror shared/)
+internal/models/      # Project, AboutPage structs (mirror ui/src/types)
 internal/store/       # content Store (memory stubs + Postgres)
 ```
 

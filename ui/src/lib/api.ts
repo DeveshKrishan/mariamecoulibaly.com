@@ -1,4 +1,4 @@
-import type { AboutPage, Project } from '@mariame/shared';
+import type { AboutPage, Project } from '../types/content';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 

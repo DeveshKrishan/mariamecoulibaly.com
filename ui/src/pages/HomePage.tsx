@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../types/content';
 import { useNavigate } from 'react-router-dom';
 import { ProjectGrid } from '../components/portfolio/ProjectGrid';
 import { Seo } from '../components/seo/Seo';

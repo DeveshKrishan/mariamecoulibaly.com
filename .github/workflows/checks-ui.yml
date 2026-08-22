@@ -8,7 +8,7 @@ on:
       - "ui/index.html"
       - "ui/vite.config.ts"
       - "ui/.oxlintrc.json"
-      - "shared/**"
+      - "ui/package.json"
       - ".github/workflows/checks-ui.yml"
   push:
     branches:
@@ -19,7 +19,7 @@ on:
       - "ui/index.html"
       - "ui/vite.config.ts"
       - "ui/.oxlintrc.json"
-      - "shared/**"
+      - "ui/package.json"
       - ".github/workflows/checks-ui.yml"
 
 permissions:

@@ -15,8 +15,6 @@ importers:
         specifier: ^21.2.2
         version: 21.2.2
 
-  shared: {}
-
   ui:
     dependencies:
       '@dnd-kit/core':
@@ -28,9 +26,6 @@ importers:
       '@dnd-kit/utilities':
         specifier: ^3.2.2
         version: 3.2.2(react@19.2.8)
-      '@mariame/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@supabase/supabase-js':
         specifier: ^2.112.3
         version: 2.112.3

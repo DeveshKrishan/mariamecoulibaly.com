@@ -244,7 +244,7 @@ This avoids maintaining a separate admin UI that can drift from the public desig
 ### 5.1 Project scaffolding — Monorepo layout
 
 This is a **pnpm monorepo** with a React frontend and a **Go** backend as
-top-level sibling folders, plus a shared TypeScript types package:
+top-level sibling folders:
 
 ```
 .
@@ -266,6 +266,8 @@ top-level sibling folders, plus a shared TypeScript types package:
 │       │   └── ProjectPage.tsx
 │       ├── lib/
 │       │   └── api.ts           # fetch client for the Go API
+│       ├── types/
+│       │   └── content.ts       # Project, AboutPage, RichTextBlock (mirror Go models)
 │       └── App.tsx
 ├── api/                         # Go backend (net/http)
 │   ├── go.mod
@@ -277,12 +279,11 @@ top-level sibling folders, plus a shared TypeScript types package:
 │       ├── api/                 # HTTP handlers, router, middleware
 │       ├── config/              # koanf-based config loading
 │       └── models/              # Project, AboutPage structs
-├── shared/                      # TS types shared by the ui app (Project, AboutPage)
 ├── pnpm-workspace.yaml
 └── package.json                 # root scripts: dev:ui, dev:api, build:ui, build:api
 ```
 
-**Package managers:** pnpm (Node 22+) for `ui` and `shared`; Go
+**Package managers:** pnpm (Node 22+) for `ui`; Go
 modules (Go 1.24+) for `api`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/), enforced on pull
 requests by the `PR Lint` workflow.
@@ -333,14 +334,12 @@ pnpm dev:api   # Go API on :4000
 
 ### 5.3 Data fetching
 
-Types are defined once in `shared/src/content.ts` and imported by
-`ui` as `@mariame/shared`. The Go API (`api/internal/models`)
-mirrors the same shape in Go structs with matching `json` tags, since Go
-can't import the TypeScript package directly — keep the two in sync when the
-schema changes.
+Types are defined in `ui/src/types/content.ts`. The Go API
+(`api/internal/models`) mirrors the same shape in Go structs with matching
+`json` tags — keep the two in sync when the schema changes.
 
 ```typescript
-// shared/src/content.ts
+// ui/src/types/content.ts
 interface Project {
   id: string;
   slug: string;
@@ -927,7 +926,7 @@ and update `--font-heading` in `ui/src/index.css` — no other changes needed.
 ## Appendix C — Quick reference commands
 
 ```bash
-# Install JS dependencies (ui + shared)
+# Install JS dependencies (ui)
 pnpm install
 
 # Local development

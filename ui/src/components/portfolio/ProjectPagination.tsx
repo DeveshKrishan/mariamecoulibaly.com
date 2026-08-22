@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../../types/content';
 import { Link } from 'react-router-dom';
 import { useEditMode } from '../../lib/editMode';
 
