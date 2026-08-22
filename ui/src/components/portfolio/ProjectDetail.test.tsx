@@ -1,4 +1,4 @@
-import type { Project, RichTextBlock } from '@mariame/shared';
+import type { Project, RichTextBlock } from '../../types/content';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';

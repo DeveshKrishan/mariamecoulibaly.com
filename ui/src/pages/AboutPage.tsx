@@ -1,4 +1,4 @@
-import type { AboutPage as AboutPageData, AboutPageLink } from '@mariame/shared';
+import type { AboutPage as AboutPageData, AboutPageLink } from '../types/content';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { EditableField } from '../components/edit/EditableField';

@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../types/content';
 
 /**
  * Neighbors in portfolio sort order (0 = newest).

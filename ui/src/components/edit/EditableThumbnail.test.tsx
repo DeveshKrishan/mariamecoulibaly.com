@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../../types/content';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';

@@ -1,4 +1,4 @@
-import type { AboutPage, Project } from '@mariame/shared';
+import type { AboutPage, Project } from '../types/content';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createProject,

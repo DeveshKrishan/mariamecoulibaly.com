@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../types/content';
 import { useEffect, useState } from 'react';
 import {
   getAdminProject,

@@ -1,4 +1,4 @@
-import type { RichTextBlock } from '@mariame/shared';
+import type { RichTextBlock } from '../../types/content';
 import { isDirectVideoUrl, toEmbedSrc } from '../../lib/embeds';
 
 function ParagraphBlockView({ text }: { text: string }) {

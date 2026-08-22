@@ -1,4 +1,4 @@
-import type { ContentStatus, Project, RichTextBlock } from '@mariame/shared';
+import type { ContentStatus, Project, RichTextBlock } from '../../types/content';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';

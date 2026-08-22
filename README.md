@@ -8,9 +8,8 @@ This is a pnpm monorepo:
 
 | Path | Description |
 |------|-------------|
-| [`ui`](./ui) | React 19 + Vite frontend |
+| [`ui`](./ui) | React 19 + Vite frontend (content types in `ui/src/types/`) |
 | [`api`](./api) | Go backend (chi router) |
-| [`shared`](./shared) | TypeScript types shared between `ui` and `api` |
 | [`docs`](./docs) | Architecture and delivery plan |
 
 ## Tech stack
@@ -21,8 +20,8 @@ This is a pnpm monorepo:
 | Backend (`api/`) | Go 1.24, [chi](https://github.com/go-chi/chi), [koanf](https://github.com/knadh/koanf), [sqlc](https://sqlc.dev/) + [pgx/v5](https://github.com/jackc/pgx) |
 | Database | **Postgres** via Supabase (migrations under `supabase/`) |
 | Auth | Supabase Auth (Google OAuth) → JWT verified in Go against project JWKS + `API_ADMIN_EMAILS` allowlist |
-| Media | **S3** via Supabase Storage (bucket `project-media`). Local `ui/public/images/` until the upload pipeline lands ([docs/PLAN.md](./docs/PLAN.md) §5.5) |
-| Shared | TypeScript types as `@mariame/shared` (`shared/`) |
+| Media | **S3** via Supabase Storage (bucket `project-media`) |
+| Content types | TypeScript in `ui/src/types/` (mirrored by Go `api/internal/models`) |
 | Tooling | pnpm workspaces, oxlint + Vitest (`ui`), golangci-lint + `go test` (`api`), commitlint, GitHub Actions CI |
 | Hosting | Vercel — `ui` (Vite SPA), `api` (Go Framework Preset) |
 
@@ -97,7 +96,7 @@ Prerequisites: Node.js ≥ 22.12, [pnpm](https://pnpm.io/) 10, and Go 1.24+ (for
 the API).
 
 ```bash
-pnpm install     # installs ui + shared workspace deps
+pnpm install     # installs ui workspace deps
 pnpm dev:ui      # http://localhost:5173
 pnpm dev:api     # http://localhost:4000 (requires Go 1.24+)
 ```

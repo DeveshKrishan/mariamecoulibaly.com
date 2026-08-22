@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../../types/content';
 import { useEffect, useId, useRef, useState } from 'react';
 import { replaceProjectThumbnail } from '../../lib/api';
 import { useAuth } from '../../lib/auth';

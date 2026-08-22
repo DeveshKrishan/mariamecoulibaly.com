@@ -1,4 +1,4 @@
-import type { Project } from '@mariame/shared';
+import type { Project } from '../types/content';
 import { describe, expect, it } from 'vitest';
 import { findProjectNeighbors } from './projectNeighbors';
 

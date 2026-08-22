@@ -1,5 +1,5 @@
 -- Phase 2 schema (docs/PLAN.md Section 9.1), extended with `client` to match
--- the live Project model in shared/src/content.ts and api/internal/models.
+-- the live Project model in ui/src/types/content.ts and api/internal/models.
 --
 -- Before linking a hosted Supabase project: add RLS policies (or disable the
 -- PostgREST API for these tables). The Go API uses the direct Postgres URL

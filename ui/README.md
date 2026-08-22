@@ -43,7 +43,7 @@ follow-ups after Edit Mode Core.
 - Tailwind CSS v4
 - Framer Motion (scroll/hover animations)
 - `@dnd-kit` (drag-and-drop, for admin edit mode)
-- Types shared with the API via `@mariame/shared` (`shared/`)
+- Content types live in `ui/src/types/` (mirrored by Go `api/internal/models`)
 - [Vercel Web Analytics](https://vercel.com/docs/analytics) (`@vercel/analytics`,
   mounted via `<Analytics />` in `src/App.tsx`) — only collects data once
   deployed on Vercel with Web Analytics enabled for the project; it's a no-op

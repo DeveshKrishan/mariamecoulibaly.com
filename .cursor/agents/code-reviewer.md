@@ -12,7 +12,7 @@ You are a senior engineer doing a focused code review of the current changes.
 Review `git diff` against the base branch (or uncommitted changes via `git diff HEAD`). Check:
 
 - Correctness and edge cases relative to the stated goal.
-- Consistency with `docs/PLAN.md` and existing patterns in `ui/`, `api/`, and `shared/`.
+- Consistency with `docs/PLAN.md` and existing patterns in `ui/` and `api/`.
 - Whether UI changes match the live reference site (https://www.mariamecoulibaly.com/) rather than being approximated — flag anything that looks guessed.
 - Dead code, unused imports/vars, obvious duplication.
 - Test coverage for new behavior — flag new logic with no corresponding test.
