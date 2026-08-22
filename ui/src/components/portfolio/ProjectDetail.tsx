@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';
 import { EditableField } from '../edit/EditableField';
 import { EditableSlug } from '../edit/EditableSlug';
+import { EditableThumbnail } from '../edit/EditableThumbnail';
 import {
   deleteProject,
   projectToWritePayload,
@@ -172,13 +173,15 @@ export function ProjectDetail({
         <div className="md:col-span-4">
           {media ? (
             <ProjectBlock block={media} />
-          ) : project.thumbnailUrl ? (
-            <img
-              src={project.thumbnailUrl}
+          ) : (
+            <EditableThumbnail
+              project={project}
               alt={project.title}
-              className="w-full object-cover"
+              aspect="natural"
+              imgClassName="w-full object-cover"
+              onReplaced={onProjectChange}
             />
-          ) : null}
+          )}
         </div>
         <div className="hidden md:col-span-1 md:block" aria-hidden="true" />
         <div className="md:col-span-7">
