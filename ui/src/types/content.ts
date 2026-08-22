@@ -15,8 +15,8 @@ export interface ImageBlock {
 }
 
 /**
- * Embedded media. `url` may be a YouTube/Vimeo watch URL or a direct video file.
- * The UI derives an embeddable player when possible.
+ * Legacy media URL block. Project details render these as "Watch Here"
+ * CTA buttons (Squarespace parity) — never as iframe embeds.
  */
 export interface EmbedBlock {
   type: 'embed';
@@ -24,7 +24,7 @@ export interface EmbedBlock {
   provider?: 'youtube' | 'vimeo' | 'video';
 }
 
-/** Call-to-action / external link rendered below body copy. */
+/** Outbound CTA button ("Watch Here" / "Listen Here") below body copy. */
 export interface LinkBlock {
   type: 'link';
   url: string;

@@ -84,11 +84,15 @@ const nextProject: Project = {
 };
 
 describe('ProjectBody', () => {
-  it('renders paragraph, image, embed, and link blocks', () => {
+  it('renders paragraph, image, and CTA button blocks (no iframe embeds)', () => {
     const body: RichTextBlock[] = [
       { type: 'paragraph', text: 'Hello body' },
       { type: 'image', url: '/img.jpg', alt: 'Still' },
-      { type: 'embed', url: 'https://youtu.be/eq6bDsFdjnA', provider: 'youtube' },
+      {
+        type: 'embed',
+        url: 'https://youtu.be/eq6bDsFdjnA',
+        provider: 'youtube',
+      },
       { type: 'link', url: 'https://example.com/watch', label: 'Watch' },
     ];
 
@@ -99,10 +103,13 @@ describe('ProjectBody', () => {
       'src',
       '/img.jpg',
     );
-    expect(screen.getByTitle('Embedded media')).toHaveAttribute(
-      'src',
-      'https://www.youtube.com/embed/eq6bDsFdjnA',
+    expect(screen.queryByTitle('Embedded media')).not.toBeInTheDocument();
+    const legacyEmbedCta = screen.getByRole('link', { name: 'Watch Here' });
+    expect(legacyEmbedCta).toHaveAttribute(
+      'href',
+      'https://youtu.be/eq6bDsFdjnA',
     );
+    expect(legacyEmbedCta).toHaveClass('project-cta');
     const watchLink = screen.getByRole('link', { name: 'Watch' });
     expect(watchLink).toHaveAttribute('href', 'https://example.com/watch');
     expect(watchLink).toHaveClass('project-cta');
