@@ -9,10 +9,10 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 /**
  * Site header matching the reference Squarespace chrome:
  * - fixed + transparent at the top of the page
- * - solid white after scroll
+ * - solid after scroll (white on most pages; dark-accent blue on About)
  * - “scroll back”: hide while scrolling down, show while scrolling up
  * - desktop inline nav; mobile two-line hamburger → full-screen overlay
- * - inverse (light) text when sitting over the About dark hero
+ * - inverse (light) text when sitting over the About dark hero / solid About bar
  */
 export function Header() {
   const { pathname } = useLocation();
@@ -29,7 +29,9 @@ export function Header() {
     setMenuOpen(false);
   }
 
-  const overDarkHero = pathname === '/about-me' && !scrolled && !menuOpen;
+  const onAbout = pathname === '/about-me';
+  // Light nav text over the About hero (transparent) and the solid blue bar.
+  const aboutInverse = onAbout && !menuOpen;
 
   useEffect(() => {
     const onScroll = () => {
@@ -70,6 +72,16 @@ export function Header() {
     };
   }, [menuOpen]);
 
+  let chromeBg = 'bg-transparent text-ink';
+  if (menuOpen) {
+    chromeBg = 'bg-white text-ink shadow-[0_1px_0_rgba(21,9,9,0.06)]';
+  } else if (scrolled && onAbout) {
+    // Keep the About solid bar on the hero dark-accent blue (not white).
+    chromeBg = 'bg-dark-accent text-white shadow-[0_1px_0_rgba(0,0,0,0.12)]';
+  } else if (scrolled) {
+    chromeBg = 'bg-white text-ink shadow-[0_1px_0_rgba(21,9,9,0.06)]';
+  }
+
   const shellClass = [
     'fixed top-0 left-0 right-0 z-50 transition-[transform,background-color,color,box-shadow] duration-300 ease-out',
     // Avoid `translate-y-0` while the menu is open: any transform on the
@@ -77,10 +89,9 @@ export function Header() {
     // containing block, so the overlay collapses to the bar height and
     // page content shows through the mobile menu.
     hidden && !menuOpen ? '-translate-y-full' : '',
-    menuOpen || scrolled
-      ? 'bg-white text-ink shadow-[0_1px_0_rgba(21,9,9,0.06)]'
-      : 'bg-transparent text-ink',
-    overDarkHero ? 'text-white' : '',
+    chromeBg,
+    // Transparent About top: force light text over the dark hero.
+    aboutInverse && !scrolled ? 'text-white' : '',
   ]
     .filter(Boolean)
     .join(' ');
