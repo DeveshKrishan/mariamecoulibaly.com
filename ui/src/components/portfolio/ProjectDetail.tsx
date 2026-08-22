@@ -36,7 +36,7 @@ function isLeadingMedia(
 }
 
 function splitLeadingMedia(body: RichTextBlock[]): {
-  media: RichTextBlock | null;
+  media: ImageBlock | null;
   rest: RichTextBlock[];
 } {
   if (isLeadingMedia(body[0])) {
