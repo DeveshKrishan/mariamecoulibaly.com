@@ -274,6 +274,31 @@ describe('ProjectDetail', () => {
     );
   });
 
+  it('labels client, role, and summary fields in edit mode', () => {
+    renderDetail(
+      <ProjectDetail
+        project={baseProject}
+        onProjectChange={vi.fn()}
+        previous={null}
+        next={null}
+      />,
+      true,
+    );
+
+    expect(screen.getByText('Client')).toBeInTheDocument();
+    expect(screen.getByText('Role')).toBeInTheDocument();
+    expect(screen.getByText('Summary')).toBeInTheDocument();
+    expect(screen.getByLabelText('Client')).toHaveValue(
+      'Resident Home/Nectar',
+    );
+    expect(screen.getByLabelText('Role')).toHaveValue(
+      'Assistant Editor — Freelance',
+    );
+    expect(screen.getByLabelText('Summary')).toHaveValue(
+      'Organized footage and re-cut Amazon advertisements',
+    );
+  });
+
   it('publishes a draft from edit mode', async () => {
     const user = userEvent.setup();
     const onProjectChange = vi.fn();
