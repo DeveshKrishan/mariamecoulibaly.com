@@ -24,7 +24,6 @@ import { ProjectCard } from './ProjectCard';
 function CardPreview({
   project,
   onDelete,
-  onThumbnailReplaced,
   dragHandleProps,
   setNodeRef,
   style,
@@ -33,7 +32,6 @@ function CardPreview({
 }: {
   project: Project;
   onDelete?: (slug: string) => void;
-  onThumbnailReplaced?: (next: Project) => void;
   dragHandleProps?: HTMLAttributes<HTMLElement>;
   setNodeRef?: (node: HTMLElement | null) => void;
   style?: CSSProperties;
@@ -83,11 +81,7 @@ function CardPreview({
         </div>
       ) : null}
 
-      <ProjectCard
-        project={project}
-        animate={false}
-        onThumbnailReplaced={onThumbnailReplaced}
-      />
+      <ProjectCard project={project} animate={false} />
     </div>
   );
 }
@@ -95,11 +89,9 @@ function CardPreview({
 function SortableCard({
   project,
   onDelete,
-  onThumbnailReplaced,
 }: {
   project: Project;
   onDelete?: (slug: string) => void;
-  onThumbnailReplaced?: (next: Project) => void;
 }) {
   const {
     attributes,
@@ -121,7 +113,6 @@ function SortableCard({
     <CardPreview
       project={project}
       onDelete={onDelete}
-      onThumbnailReplaced={onThumbnailReplaced}
       dragHandleProps={dragHandleProps}
       setNodeRef={setNodeRef}
       style={style}
@@ -135,19 +126,19 @@ function SortableCard({
  * Homepage project index — 3-column inset grid matching the reference
  * site’s `blog-basic-grid` (tweak-blog-basic-grid-columns: 3).
  * When `editable`, cards are sortable via @dnd-kit.
+ * Thumbnail replace is intentionally omitted here so photo clicks still
+ * open the project detail page in edit mode.
  */
 export function ProjectGrid({
   projects,
   editable = false,
   onReorder,
   onDelete,
-  onThumbnailReplaced,
 }: {
   projects: Project[];
   editable?: boolean;
   onReorder?: (ordered: Project[]) => void;
   onDelete?: (slug: string) => void;
-  onThumbnailReplaced?: (next: Project) => void;
 }) {
   const sorted = [...projects].sort((a, b) => a.sortOrder - b.sortOrder);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
@@ -164,11 +155,7 @@ export function ProjectGrid({
     return (
       <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((project) => (
-          <ProjectCard
-            key={project.id}
-            project={project}
-            onThumbnailReplaced={onThumbnailReplaced}
-          />
+          <ProjectCard key={project.id} project={project} />
         ))}
       </div>
     );
@@ -245,7 +232,6 @@ export function ProjectGrid({
                 key={project.slug}
                 project={project}
                 onDelete={onDelete}
-                onThumbnailReplaced={onThumbnailReplaced}
               />
             ))}
           </div>
