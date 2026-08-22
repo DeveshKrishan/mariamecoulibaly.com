@@ -12,22 +12,21 @@ import { useEditMode } from '../../lib/editMode';
 export function ProjectCard({
   project,
   animate = true,
-  onThumbnailReplaced,
 }: {
   project: Project;
   /** Disable scroll fade-in (e.g. while dragging in edit mode). */
   animate?: boolean;
-  onThumbnailReplaced?: (next: Project) => void;
 }) {
   const { editMode } = useEditMode();
   const to = `/projects/${project.slug}${editMode ? '?edit=1' : ''}`;
 
+  // Thumbnail replace lives on the project detail page only — keeping the
+  // grid image clickable makes edit-mode navigation match public browsing.
   const thumb = (
     <EditableThumbnail
       project={project}
       alt={project.title}
       aspect="square"
-      onReplaced={editMode ? onThumbnailReplaced : undefined}
       imgClassName="h-full w-full object-cover"
     />
   );

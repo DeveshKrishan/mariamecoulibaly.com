@@ -11,6 +11,22 @@ vi.mock('../../lib/supabase', () => ({
   supabase: null,
 }));
 
+vi.mock('../../lib/auth', async () => {
+  const actual =
+    await vi.importActual<typeof import('../../lib/auth')>('../../lib/auth');
+  return {
+    ...actual,
+    useAuth: () => ({
+      accessToken: 'tok',
+      isAdmin: true,
+      user: { email: 'a@b.com', displayName: 'A' },
+      signInWithGoogle: vi.fn(),
+      signOut: vi.fn(),
+      isLoading: false,
+    }),
+  };
+});
+
 const project: Project = {
   id: '1',
   slug: 'my-project',
@@ -25,9 +41,9 @@ const project: Project = {
   status: 'published',
 };
 
-function renderCard(p: Project) {
+function renderCard(p: Project, initialEntry = '/') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <AuthProvider>
         <EditModeProvider>
           <ProjectCard project={p} />
@@ -59,5 +75,15 @@ describe('ProjectCard', () => {
     renderCard({ ...project, thumbnailUrl: '' });
 
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('keeps the photo as a detail link in edit mode (no replace overlay)', () => {
+    renderCard(project, '/?edit=1');
+
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/projects/my-project?edit=1',
+    );
+    expect(screen.queryByText(/replace image/i)).not.toBeInTheDocument();
   });
 });
