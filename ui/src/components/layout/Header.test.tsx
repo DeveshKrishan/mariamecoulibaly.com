@@ -109,6 +109,29 @@ describe('Header', () => {
     const { container } = renderHeader('/about-me');
     const header = container.querySelector('header');
     expect(header?.className).toContain('text-white');
+    expect(header?.className).toContain('bg-transparent');
+  });
+
+  it('keeps a dark-accent solid bar when scrolled on About (not white)', () => {
+    const { container } = renderHeader('/about-me');
+    setScrollY(40);
+    // Scroll-back may hide the bar; bring it back with an up-scroll.
+    setScrollY(20);
+
+    const header = container.querySelector('header');
+    expect(header?.className).toContain('bg-dark-accent');
+    expect(header?.className).toContain('text-white');
+    expect(header?.className).not.toMatch(/bg-white/);
+  });
+
+  it('uses a solid white bar when scrolled on Projects', () => {
+    const { container } = renderHeader('/');
+    setScrollY(40);
+    setScrollY(20);
+
+    const header = container.querySelector('header');
+    expect(header?.className).toMatch(/bg-white/);
+    expect(header?.className).not.toContain('bg-dark-accent');
   });
 
   it('stays visible at the top of the page', () => {
