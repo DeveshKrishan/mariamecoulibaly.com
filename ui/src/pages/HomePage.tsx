@@ -1,6 +1,7 @@
 import type { Project } from '../types/content';
 import { useNavigate } from 'react-router-dom';
 import { ProjectGrid } from '../components/portfolio/ProjectGrid';
+import { ProjectGridSkeleton } from '../components/portfolio/ProjectGridSkeleton';
 import { Seo } from '../components/seo/Seo';
 import { useProjects } from '../hooks/useProjects';
 import {
@@ -92,7 +93,7 @@ export function HomePage() {
         </div>
       ) : null}
       {isLoading ? (
-        <p>Loading…</p>
+        <ProjectGridSkeleton />
       ) : error ? (
         <p>Could not load projects: {error.message}</p>
       ) : (

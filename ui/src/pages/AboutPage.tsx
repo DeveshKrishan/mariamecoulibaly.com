@@ -60,11 +60,7 @@ export function AboutPage() {
     'bg-dark-accent text-white -mt-[4.5rem] pt-[4.5rem]';
 
   if (!page) {
-    return (
-      <section className={`${heroBleed} px-[5vw] py-10`}>
-        <p>Loading…</p>
-      </section>
-    );
+    return null;
   }
 
   const description = page.headline || truncate(stripHtml(page.bio), 160);
