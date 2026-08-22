@@ -149,7 +149,11 @@ ON CONFLICT (slug) WHERE deleted_at IS NULL DO UPDATE SET
   role = EXCLUDED.role,
   summary = EXCLUDED.summary,
   body = EXCLUDED.body,
-  thumbnail_url = EXCLUDED.thumbnail_url,
+  -- Keep Storage (or other absolute) URLs so re-seed does not clobber admin uploads.
+  thumbnail_url = CASE
+    WHEN projects.thumbnail_url LIKE 'http%' THEN projects.thumbnail_url
+    ELSE EXCLUDED.thumbnail_url
+  END,
   sort_order = EXCLUDED.sort_order,
   status = EXCLUDED.status,
   published_at = EXCLUDED.published_at,

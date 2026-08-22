@@ -1,11 +1,15 @@
 // Command migrate-media uploads local seed thumbnails from
 // ui/public/images/projects into Supabase Storage and rewrites
-// projects.thumbnail_url to the public object URL.
+// projects.thumbnail_url (and any body image blocks still on
+// /images/projects/…) to the public object URL.
 //
 // Requires:
 //   - API_DATABASE_URL (or DATABASE_URL)
 //   - API_SUPABASE_URL + API_SUPABASE_SERVICE_ROLE_KEY
 //   - project-media bucket (see supabase migrations)
+//
+// Local files are optional once thumbnails already live in Storage:
+// body-only rewrites use the project's existing public thumbnail URL.
 //
 // Usage (from repo root):
 //
@@ -26,6 +30,7 @@ import (
 
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/config"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/mediastore"
+	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/models"
 	"github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/store"
 )
 
@@ -56,9 +61,10 @@ func run() error {
 
 	imagesDir, err := resolveImagesDir()
 	if err != nil {
-		return err
+		log.Printf("images dir unavailable (%v); will only rewrite body URLs when thumbnail is already in Storage", err)
+	} else {
+		log.Printf("images dir: %s", imagesDir)
 	}
-	log.Printf("images dir: %s", imagesDir)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -80,29 +86,45 @@ func run() error {
 
 	actor := store.Actor{Email: "migrate-media@local", DisplayName: "migrate-media"}
 	migrated := 0
+	bodyFixed := 0
 	skipped := 0
 
 	for _, project := range projects {
-		if !strings.HasPrefix(project.ThumbnailURL, localThumbPrefix) {
+		publicURL := project.ThumbnailURL
+		thumbMigrated := false
+
+		if strings.HasPrefix(project.ThumbnailURL, localThumbPrefix) {
+			if imagesDir == "" {
+				return fmt.Errorf("project %s still has local thumbnail %s but images dir is missing", project.Slug, project.ThumbnailURL)
+			}
+			rel := strings.TrimPrefix(project.ThumbnailURL, localThumbPrefix)
+			rel = filepath.Base(rel) // never allow path traversal
+			src := filepath.Join(imagesDir, rel)
+			data, err := os.ReadFile(src)
+			if err != nil {
+				return fmt.Errorf("read %s (project %s): %w", src, project.Slug, err)
+			}
+			contentType, ext, err := imageTypeFromName(rel)
+			if err != nil {
+				return fmt.Errorf("project %s: %w", project.Slug, err)
+			}
+			objectKey := fmt.Sprintf("projects/%s/seed.%s", project.ID, ext)
+			if err := media.UploadObject(ctx, objectKey, contentType, data); err != nil {
+				return fmt.Errorf("upload %s: %w", project.Slug, err)
+			}
+			publicURL = media.PublicURL(objectKey)
+			thumbMigrated = true
+		} else if !strings.HasPrefix(project.ThumbnailURL, "http://") && !strings.HasPrefix(project.ThumbnailURL, "https://") {
 			skipped++
 			continue
 		}
-		rel := strings.TrimPrefix(project.ThumbnailURL, localThumbPrefix)
-		rel = filepath.Base(rel) // never allow path traversal
-		src := filepath.Join(imagesDir, rel)
-		data, err := os.ReadFile(src)
-		if err != nil {
-			return fmt.Errorf("read %s (project %s): %w", src, project.Slug, err)
+
+		body, bodyChanged := rewriteBodyLocalImages(project.Body, publicURL)
+		if !thumbMigrated && !bodyChanged {
+			skipped++
+			continue
 		}
-		contentType, ext, err := imageTypeFromName(rel)
-		if err != nil {
-			return fmt.Errorf("project %s: %w", project.Slug, err)
-		}
-		objectKey := fmt.Sprintf("projects/%s/seed.%s", project.ID, ext)
-		if err := media.UploadObject(ctx, objectKey, contentType, data); err != nil {
-			return fmt.Errorf("upload %s: %w", project.Slug, err)
-		}
-		publicURL := media.PublicURL(objectKey)
+
 		oldURL := project.ThumbnailURL
 		in := store.ProjectInput{
 			Slug:         project.Slug,
@@ -110,7 +132,7 @@ func run() error {
 			Client:       project.Client,
 			Role:         project.Role,
 			Summary:      project.Summary,
-			Body:         project.Body,
+			Body:         body,
 			ThumbnailURL: publicURL,
 			SortOrder:    project.SortOrder,
 			Status:       project.Status,
@@ -119,21 +141,54 @@ func run() error {
 		if _, err := pg.UpdateProject(ctx, actor, project.Slug, in); err != nil {
 			return fmt.Errorf("update %s: %w", project.Slug, err)
 		}
-		payload, _ := json.Marshal(map[string]string{
-			"projectId": project.ID,
-			"slug":      project.Slug,
-			"oldUrl":    oldURL,
-			"newUrl":    publicURL,
+		payload, _ := json.Marshal(map[string]any{
+			"projectId":     project.ID,
+			"slug":          project.Slug,
+			"oldUrl":        oldURL,
+			"newUrl":        publicURL,
+			"bodyRewritten": bodyChanged,
 		})
 		if err := pg.LogAudit(ctx, actor, "media.migrate", payload); err != nil {
 			log.Printf("audit media.migrate %s: %v", project.Slug, err)
 		}
-		log.Printf("migrated %s -> %s", project.Slug, publicURL)
-		migrated++
+		if thumbMigrated {
+			log.Printf("migrated %s -> %s", project.Slug, publicURL)
+			migrated++
+		}
+		if bodyChanged {
+			log.Printf("rewrote body local images for %s", project.Slug)
+			bodyFixed++
+		}
 	}
 
-	log.Printf("done: migrated=%d skipped=%d", migrated, skipped)
+	log.Printf("done: migrated=%d bodyFixed=%d skipped=%d", migrated, bodyFixed, skipped)
 	return nil
+}
+
+func rewriteBodyLocalImages(body []models.RichTextBlock, publicURL string) ([]models.RichTextBlock, bool) {
+	if len(body) == 0 || publicURL == "" {
+		return body, false
+	}
+	changed := false
+	out := make([]models.RichTextBlock, len(body))
+	for i, block := range body {
+		out[i] = block
+		if fmt.Sprint(block["type"]) != "image" {
+			continue
+		}
+		url, _ := block["url"].(string)
+		if !strings.HasPrefix(url, localThumbPrefix) {
+			continue
+		}
+		next := models.RichTextBlock{}
+		for k, v := range block {
+			next[k] = v
+		}
+		next["url"] = publicURL
+		out[i] = next
+		changed = true
+	}
+	return out, changed
 }
 
 func resolveImagesDir() (string, error) {
@@ -150,6 +205,14 @@ func resolveImagesDir() (string, error) {
 			abs, err := filepath.Abs(c)
 			if err != nil {
 				return "", fmt.Errorf("resolve images dir %q: %w", c, err)
+			}
+			// Treat an empty directory as missing (files already removed).
+			entries, err := os.ReadDir(abs)
+			if err != nil {
+				return "", err
+			}
+			if len(entries) == 0 {
+				continue
 			}
 			return abs, nil
 		}
