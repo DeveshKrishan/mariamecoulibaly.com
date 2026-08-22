@@ -1,4 +1,4 @@
-import type { Project, RichTextBlock } from '@mariame/shared';
+import type { ContentStatus, Project, RichTextBlock } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';
@@ -115,7 +115,7 @@ export function ProjectDetail({
 
   async function handleTogglePublish() {
     if (!accessToken || !onProjectChange) return;
-    const nextStatus =
+    const nextStatus: ContentStatus =
       project.status === 'published' ? 'draft' : 'published';
     const nextPublishedAt =
       nextStatus === 'published' && !project.publishedAt.trim()
