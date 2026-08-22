@@ -116,9 +116,13 @@ make -C api migrate-media
 
 This uploads each project's local `/images/projects/...` file into
 `projects/{id}/seed.{ext}` and updates `thumbnail_url` to the public Storage
-URL. Re-running is safe (upsert). Projects that already use Storage URLs are
-skipped. Static files under `ui/public/images/projects/` can remain for local
-fallback until you remove them later.
+URL. It also rewrites any body `image` blocks still pointing at
+`/images/projects/…` to that public URL. Re-running is safe: projects that
+already use Storage URLs are skipped unless their body still needs a rewrite.
+
+Local seed files under `ui/public/images/projects/` have been removed from the
+repo after the one-time migration. To re-run uploads, point
+`MIGRATE_MEDIA_IMAGES_DIR` at a backup of those files.
 
 When `API_DATABASE_URL` (or `DATABASE_URL`) **is** set, the process
 `Ping`s Postgres during startup (10s timeout) and exits if unreachable —

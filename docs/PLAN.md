@@ -116,7 +116,7 @@ Preserve existing slugs during migration to avoid broken links and SEO loss.
 - [x] Admin edit mode (see Section 6) — core toggle/toolbar/reorder/inline fields (TipTap/body deferred)
 - [x] Drag-and-drop project reordering on homepage
 - [x] Inline text editing on About Me and project pages
-- [ ] **Admin project picture replace** (thumbnail upload → Supabase Storage → update `thumbnail_url`; see §5.5 / §6.7)
+- [x] **Admin project picture replace** (thumbnail upload → Supabase Storage → update `thumbnail_url`; see §5.5 / §6.7)
 - [ ] Preview before publish
 
 ### Nice to have (v2)
@@ -124,7 +124,7 @@ Preserve existing slugs during migration to avoid broken links and SEO loss.
 - [ ] RSS feed at `/projects?format=rss`
 - [ ] 301 redirects from all old Squarespace URLs
 - [ ] Analytics (Plausible or GA4)
-- [ ] Draft vs. published states
+- [x] Draft vs. published states
 - [ ] Revision history / undo
 - [ ] Multiple admin users with roles
 
@@ -381,10 +381,12 @@ Use CSS custom properties in `:root` so edit mode can expose a simple theme pane
 
 ### 5.5 Media handling
 
-**Current (seed / local):** thumbnails live under `ui/public/images/projects/` and
-`thumbnail_url` is a same-origin path (e.g. `/images/projects/residenthome.jpg`).
+**Current:** project thumbnails (and seed body images) live in **Supabase Storage**
+bucket `project-media`. `thumbnail_url` holds the public object URL. Local files under
+`ui/public/images/projects/` were the one-time seed source and have been removed from
+the repo after `make -C api migrate-media`.
 
-**Target (admin replace):** store uploaded originals in **Supabase Storage**, keep
+**Admin replace:** store uploaded originals in **Supabase Storage**, keep
 the public URL on `projects.thumbnail_url` (and on body `image` blocks when those
 become editable).
 
@@ -414,9 +416,9 @@ Optional follow-up: delete the previous Storage object when the old URL is under
 our bucket (avoid orphaned files). Body / leading-detail image replace reuses the
 same upload-url endpoint once TipTap/body editing lands.
 
-**One-time migration:** copy `ui/public/images/projects/*` into the bucket and
-rewrite seeded `thumbnail_url` values to public Storage URLs so local static
-files are no longer required in production.
+**One-time migration (done):** `make -C api migrate-media` copied seed files into
+the bucket, rewrote `thumbnail_url`s (and local body image URLs) to public Storage
+URLs, then local static thumbnails were removed from the repo.
 
 ---
 
@@ -436,7 +438,8 @@ files are no longer required in production.
 | Project order on homepage | Drag-and-drop reorder (`@dnd-kit/sortable`) | Done |
 | Project title, role, summary, client, date | Click-to-edit inline text | Done |
 | Project slug | Inline edit with uniqueness check | Done |
-| **Project thumbnail** | Click image → file picker → upload → replace | **Next** (§6.7) |
+| **Project thumbnail** | Click image → file picker → upload → replace | Done (§6.7) |
+| Project status (draft / published) | Publish / Unpublish on project detail | Done |
 | Project body (rich text / blocks) | TipTap / block editor | Deferred |
 | About Me headline & bio | Inline edit | Done |
 | External links | Editable list (add/remove/reorder) | Done |
@@ -526,13 +529,13 @@ Response: `{ uploadUrl, publicUrl, objectKey }`.
 
 **Acceptance criteria:**
 
-- [ ] Admin can replace a thumbnail from the homepage grid in edit mode
-- [ ] Admin can replace a thumbnail from the project detail page in edit mode
-- [ ] Non-admins never see replace controls; unauthenticated upload-url returns 401/403
-- [ ] Rejected files (wrong type / over size) never hit Storage
-- [ ] New image appears on grid + detail after save without a full page reload
-- [ ] `audit_log` records `media.replace` with project id + old/new URLs
-- [ ] Seeded/static `/images/projects/*` still works until Storage migration runs
+- [x] Admin can replace a thumbnail from the homepage grid in edit mode
+- [x] Admin can replace a thumbnail from the project detail page in edit mode
+- [x] Non-admins never see replace controls; unauthenticated upload-url returns 401/403
+- [x] Rejected files (wrong type / over size) never hit Storage
+- [x] New image appears on grid + detail after save without a full page reload
+- [x] `audit_log` records `media.replace` with project id + old/new URLs
+- [x] Seeded content uses Storage public URLs (local `/images/projects/*` removed)
 
 ---
 
@@ -802,18 +805,19 @@ node scripts/migrate-from-squarespace.ts
 - [x] Database-backed public GET routes for projects and about page (Postgres when `API_DATABASE_URL` is set; in-memory stubs otherwise)
 - [x] Admin authentication (Supabase Google OAuth + JWKS verify + `API_ADMIN_EMAILS` allowlist; `/admin/login`)
 - [x] Authenticated write APIs (create/update/soft-delete/reorder projects, update about, audit_log)
-- [ ] **Media upload pipeline** — Supabase Storage bucket `project-media` + `POST /api/admin/media/upload-url` (§5.5)
-- [ ] One-time seed: migrate `ui/public/images/projects/*` → Storage and rewrite `thumbnail_url`s
-- [ ] Draft/publish workflow UI (API already accepts `draft` / `published` status)
+- [x] **Media upload pipeline** — Supabase Storage bucket `project-media` + `POST /api/admin/media/upload-url` (§5.5)
+- [x] One-time seed: migrate `ui/public/images/projects/*` → Storage and rewrite `thumbnail_url`s
+- [x] Draft/publish workflow UI (Publish / Unpublish on project detail; API accepts `draft` / `published`)
 
 ### Phase 3 — Edit mode (2 weeks)
 
 - [x] Edit mode context and toolbar (`?edit=1`, floating status bar)
 - [x] Drag-and-drop project reorder (+ add / soft-delete)
 - [x] Inline text editing (project meta + About; bio as textarea)
-- [ ] **Admin project picture replace** (grid + detail; §6.7 acceptance criteria)
+- [x] **Admin project picture replace** (grid + detail; §6.7 acceptance criteria)
 - [ ] TipTap / body block editor (incl. optional body image replace via same upload pipeline)
-- [ ] Auto-save drafts + Publish workflow UI
+- [x] Publish / Unpublish control on project detail (draft vs published)
+- [ ] Auto-save drafts + Preview workflow UI
 - [ ] Preview and publish
 
 ### Phase 4 — Migration & launch (1 week)

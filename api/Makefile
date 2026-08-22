@@ -16,8 +16,8 @@ sqlc:
 seed:
 	go run ./cmd/seed
 
-# Upload ui/public/images/projects thumbnails to Supabase Storage and rewrite
-# thumbnail_url (requires DB URL + API_SUPABASE_SERVICE_ROLE_KEY).
+# Upload local seed thumbnails (if present) to Supabase Storage and rewrite
+# thumbnail_url + body image URLs (requires DB URL + API_SUPABASE_SERVICE_ROLE_KEY).
 migrate-media:
 	go run ./cmd/migrate-media
 
