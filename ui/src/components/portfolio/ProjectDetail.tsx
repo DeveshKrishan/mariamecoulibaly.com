@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';
 import { EditableField } from '../edit/EditableField';
+import { EditableProjectBody } from '../edit/EditableProjectBody';
 import { EditableSlug } from '../edit/EditableSlug';
 import { EditableThumbnail } from '../edit/EditableThumbnail';
 import {
@@ -211,7 +212,15 @@ export function ProjectDetail({
 
       <div className="grid grid-cols-1 items-start gap-y-8 md:grid-cols-12">
         <div className="md:col-span-4">
-          {media ? (
+          {editMode ? (
+            <EditableThumbnail
+              project={project}
+              alt={project.title}
+              aspect="natural"
+              imgClassName="w-full object-cover"
+              onReplaced={onProjectChange}
+            />
+          ) : media ? (
             <ProjectBlock block={media} />
           ) : (
             <EditableThumbnail
@@ -271,7 +280,15 @@ export function ProjectDetail({
               </>
             )}
           </div>
-          <ProjectBody body={rest} />
+          {editMode ? (
+            <EditableProjectBody
+              projectId={project.id}
+              body={project.body}
+              onSave={(next) => void saveField('body', next)}
+            />
+          ) : (
+            <ProjectBody body={rest} />
+          )}
         </div>
       </div>
 
