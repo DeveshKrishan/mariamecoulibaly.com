@@ -12,8 +12,9 @@ let mockEditMode = {
   editMode: false,
   setEditMode,
   canEdit: true,
-  saveStatus: 'idle' as const,
+  saveStatus: 'idle' as 'idle' | 'saving' | 'saved' | 'error',
   saveError: null as string | null,
+  lastSavedAt: null as Date | null,
   runSave: vi.fn(),
 };
 
@@ -27,6 +28,7 @@ describe('EditToolbar', () => {
       canEdit: true,
       saveStatus: 'idle',
       saveError: null,
+      lastSavedAt: null,
       runSave: vi.fn(),
     };
   });
@@ -51,5 +53,35 @@ describe('EditToolbar', () => {
     });
 
     expect(screen.getByText('Editing — changes save automatically')).toBeInTheDocument();
+  });
+
+  it('shows saved-at timestamp in local dd/mm/yyyy after a save', () => {
+    const savedAt = new Date(2026, 7, 21, 18, 15, 32);
+    mockEditMode = {
+      ...mockEditMode,
+      editMode: true,
+      saveStatus: 'saved',
+      lastSavedAt: savedAt,
+    };
+    render(<EditToolbar />);
+
+    expect(screen.getByText('Last saved at 21/08/2026 18:15:32')).toBeInTheDocument();
+  });
+
+  it('keeps showing last saved time when status returns to idle', () => {
+    const savedAt = new Date(2026, 7, 21, 9, 8, 7);
+    mockEditMode = {
+      ...mockEditMode,
+      editMode: true,
+      saveStatus: 'idle',
+      lastSavedAt: savedAt,
+    };
+    render(<EditToolbar />);
+
+    act(() => {
+      vi.advanceTimersByTime(1800);
+    });
+
+    expect(screen.getByText('Last saved at 21/08/2026 09:08:07')).toBeInTheDocument();
   });
 });

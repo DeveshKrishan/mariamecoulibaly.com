@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditMode } from '../../lib/editMode';
+import { formatSavedAt } from '../../lib/formatSavedAt';
 
 const ENTRY_FLASH_MS = 1800;
 
 /**
- * Floating edit-mode chrome: status + exit. Body/media editing is deferred.
+ * Floating edit-mode chrome: status + exit.
  */
 export function EditToolbar() {
-  const { editMode, setEditMode, saveStatus, saveError } = useEditMode();
+  const { editMode, setEditMode, saveStatus, saveError, lastSavedAt } = useEditMode();
   const [entryFlash, setEntryFlash] = useState(false);
   const wasEditMode = useRef(false);
 
@@ -29,15 +30,18 @@ export function EditToolbar() {
   // Save/error chrome wins over the entry flash.
   const showEntryFlash = entryFlash && saveStatus === 'idle';
 
+  const savedLabel =
+    lastSavedAt != null ? `Last saved at ${formatSavedAt(lastSavedAt)}` : null;
+
   const statusLabel = showEntryFlash
     ? 'Signed in — edit mode on'
     : saveStatus === 'saving'
       ? 'Saving…'
       : saveStatus === 'saved'
-        ? 'Saved'
+        ? (savedLabel ?? 'Saved')
         : saveStatus === 'error'
           ? (saveError ?? 'Save failed')
-          : 'Editing — changes save automatically';
+          : (savedLabel ?? 'Editing — changes save automatically');
 
   const successChrome = showEntryFlash || saveStatus === 'saved';
 
@@ -55,11 +59,6 @@ export function EditToolbar() {
         <p className={!successChrome && saveStatus === 'idle' ? 'text-ink/70' : undefined}>
           {statusLabel}
         </p>
-        {!showEntryFlash && (saveStatus === 'idle' || saveStatus === 'saving') ? (
-          <p className="hidden text-xs text-ink/50 sm:block">
-            Body/media editing coming next
-          </p>
-        ) : null}
         <button
           type="button"
           onClick={() => setEditMode(false)}

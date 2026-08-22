@@ -18,6 +18,8 @@ type EditModeContextValue = {
   canEdit: boolean;
   saveStatus: SaveStatus;
   saveError: string | null;
+  /** Local time of the most recent successful save in this session; null if none yet. */
+  lastSavedAt: Date | null;
   runSave: <T>(work: () => Promise<T>) => Promise<T>;
 };
 
@@ -28,6 +30,7 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
   const wantEdit = searchParams.get('edit') === '1';
   const canEdit = Boolean(isAdmin && accessToken);
@@ -70,6 +73,7 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
     setSaveError(null);
     try {
       const result = await work();
+      setLastSavedAt(new Date());
       setSaveStatus('saved');
       window.setTimeout(() => {
         setSaveStatus((s) => (s === 'saved' ? 'idle' : s));
@@ -90,9 +94,10 @@ export function EditModeProvider({ children }: { children: ReactNode }) {
       canEdit,
       saveStatus,
       saveError,
+      lastSavedAt,
       runSave,
     }),
-    [editMode, setEditMode, canEdit, saveStatus, saveError, runSave],
+    [editMode, setEditMode, canEdit, saveStatus, saveError, lastSavedAt, runSave],
   );
 
   return (
