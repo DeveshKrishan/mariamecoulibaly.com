@@ -7,12 +7,10 @@ import {
   listAdminProjects,
 } from '../lib/api';
 import { useAuth } from '../lib/auth';
-import { useEditMode } from '../lib/editMode';
 import { findProjectNeighbors } from '../lib/projectNeighbors';
 
 export function useProject(slug: string | undefined) {
   const { accessToken } = useAuth();
-  const { editMode } = useEditMode();
   const [prevSlug, setPrevSlug] = useState(slug);
   const [project, setProject] = useState<Project | null>(null);
   const [previous, setPrevious] = useState<Project | null>(null);
@@ -37,13 +35,15 @@ export function useProject(slug: string | undefined) {
     if (!slug) return;
 
     let cancelled = false;
-    const admin = editMode && accessToken;
+    // Admins keep draft detail reachable after exiting edit mode (public chrome
+    // preview). Visitors without a token still hit the published-only API.
+    const admin = Boolean(accessToken);
 
     const detailPromise = admin
-      ? getAdminProject(slug, accessToken)
+      ? getAdminProject(slug, accessToken!)
       : getProject(slug);
     const listPromise = admin
-      ? listAdminProjects(accessToken)
+      ? listAdminProjects(accessToken!)
       : getProjects();
 
     Promise.all([detailPromise, listPromise])
@@ -69,7 +69,7 @@ export function useProject(slug: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [slug, editMode, accessToken]);
+  }, [slug, accessToken]);
 
   if (!slug) {
     return {
