@@ -1,4 +1,4 @@
-.PHONY: run dev build fmt fmt-check vet lint test tidy sqlc seed release release-snapshot clean
+.PHONY: run dev build fmt fmt-check vet lint test tidy sqlc seed migrate-media release release-snapshot clean
 
 run: dev
 
@@ -15,6 +15,11 @@ sqlc:
 # Upserts stub projects + about page into Postgres (requires API_DATABASE_URL).
 seed:
 	go run ./cmd/seed
+
+# Upload ui/public/images/projects thumbnails to Supabase Storage and rewrite
+# thumbnail_url (requires DB URL + API_SUPABASE_SERVICE_ROLE_KEY).
+migrate-media:
+	go run ./cmd/migrate-media
 
 # Formats code in place with gofmt + goimports (via golangci-lint fmt).
 fmt:
