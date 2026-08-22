@@ -1,5 +1,4 @@
 import type { RichTextBlock } from '../../types/content';
-import { isDirectVideoUrl, toEmbedSrc } from '../../lib/embeds';
 
 function ParagraphBlockView({ text }: { text: string }) {
   return (
@@ -41,49 +40,11 @@ function ImageBlockView({
   return <figure className="mb-6">{image}</figure>;
 }
 
-function EmbedBlockView({ url, provider }: { url: string; provider?: string }) {
-  if (isDirectVideoUrl(url, provider)) {
-    return (
-      <video
-        src={url}
-        controls
-        className="w-full mb-6 bg-neutral-100"
-        preload="metadata"
-      >
-        <track kind="captions" />
-      </video>
-    );
-  }
-
-  const embedSrc = toEmbedSrc(url, provider);
-  if (embedSrc) {
-    return (
-      <div className="relative w-full mb-6 aspect-video bg-neutral-100">
-        <iframe
-          src={embedSrc}
-          title="Embedded media"
-          className="absolute inset-0 h-full w-full border-0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  return (
-    <p className="mb-4">
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline"
-      >
-        {url}
-      </a>
-    </p>
-  );
-}
-
+/**
+ * Project media CTAs match the Squarespace site: a centered outline button
+ * ("Watch Here" / "Listen Here"), never an iframe embed.
+ * Legacy `embed` body blocks are rendered the same way for parity.
+ */
 function LinkBlockView({ url, label }: { url: string; label: string }) {
   return (
     <p className="mb-6 text-center">
@@ -109,7 +70,7 @@ export function ProjectBlock({ block }: { block: RichTextBlock }) {
         <ImageBlockView url={block.url} alt={block.alt} href={block.href} />
       );
     case 'embed':
-      return <EmbedBlockView url={block.url} provider={block.provider} />;
+      return <LinkBlockView url={block.url} label="Watch Here" />;
     case 'link':
       return <LinkBlockView url={block.url} label={block.label} />;
     default:

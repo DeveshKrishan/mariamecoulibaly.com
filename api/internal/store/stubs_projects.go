@@ -9,6 +9,9 @@ import "github.com/DeveshKrishan/mariamecoulibaly.com/api/internal/models"
 // Titles, slugs, publish dates, roles, summaries, and body copy match the
 // reference site; sortOrder is reverse-chronological (0 = most recent).
 //
+// Outbound media CTAs use type "link" ("Watch Here" / "Listen Here" buttons),
+// matching Squarespace — the original site never iframe-embeds video/audio.
+//
 // ThumbnailURLs (and body image URLs) point at public Supabase Storage
 // objects in the project-media bucket (seeded via make migrate-media).
 var stubProjects = []models.Project{
@@ -30,7 +33,7 @@ var stubProjects = []models.Project{
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Udacity is a global edtech platform reaching over 16.9 million learners across 240+ countries through industry-co-created Nanodegree programs in tech, AI, and data. I apply my film background to produce and edit video course content that makes complex, technical subjects clear and engaging for a worldwide audience."},
 			{"type": "paragraph", "text": "Examples: Japanese Localization, Java Programming, Anthropic Engineer"},
-			{"type": "embed", "url": "https://www.youtube.com/watch?v=yftQNN73AP0&t=13s", "provider": "youtube"},
+			{"type": "link", "url": "https://www.youtube.com/watch?v=yftQNN73AP0&t=13s", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/8306c988-3b1e-4293-9929-96ed427acd49/seed.jpg", SortOrder: 1, Status: models.StatusPublished,
 	},
@@ -40,6 +43,7 @@ var stubProjects = []models.Project{
 		Summary: "Edited Episodes 100-150 | Contributed to a 300% increase in streams and downloads",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Hosted by Luisa Anderson and Kristyn Medeiros, Flying Upstream invites you to explore the unconventional paths that lead to fulfilling, sustainable lives. Each episode uncovers how individuals break free from societal norms to create their own unique journeys. From ancient wisdom to modern-day choices, our discussions challenge you to think beyond the mainstream and embrace alternative perspectives. If you've ever felt like flying north while the world turns south, you've found your flock."},
+			{"type": "link", "url": "https://podcasts.apple.com/us/podcast/flying-upstream-podcast/id1745028647", "label": "Listen Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/56709ace-fbe7-4f19-800b-955e0acd9344/seed.webp", SortOrder: 2, Status: models.StatusPublished,
 	},
@@ -49,6 +53,7 @@ var stubProjects = []models.Project{
 		Summary: "Featured on KQED Radio (343,000 average weekly listeners)",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Curious about what young people think about the future of our region? Every year, students from San Francisco State University grab microphone kits in search of stories that matter to them. They dive deep into the heart of the Bay’s diverse communities and explore pressing issues that will remain relevant in the years to come. From a jazz-loving church, to firefighting goats, to a marine lab’s fight for survival, students share unexpected stories and amplify diverse voices in this special report, “The Future of the Bay.”"},
+			{"type": "link", "url": "https://www.kqed.org/radio/5555/future-of-the-bay-july-2025-special", "label": "Listen Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/88cbd9b1-bd07-4b4f-8960-41989b8cfd5f/seed.jpg", SortOrder: 3, Status: models.StatusPublished,
 	},
@@ -79,7 +84,7 @@ var stubProjects = []models.Project{
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Partnered with PG&E"},
 			{"type": "paragraph", "text": "Tackling the impact of climate change is going to take all of us. Tanya Rivas is building a vision on how we can coexist with the needs of the plants and animals around us. Tanya is from American Canyon, studying Ecology, Evolution and Biodiversity at UC Davis."},
-			{"type": "embed", "url": "https://youtu.be/eq6bDsFdjnA", "provider": "youtube"},
+			{"type": "link", "url": "https://youtu.be/eq6bDsFdjnA", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/febd8ad2-946a-4453-aea8-9772171b102a/seed.jpg", SortOrder: 6, Status: models.StatusPublished,
 	},
@@ -99,7 +104,7 @@ var stubProjects = []models.Project{
 		Summary: "Featured on PG&E’s YouTube (35.2K subscribers) and Instagram (24K followers)",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "PG&E coworker volunteers participate in Saluting Branches, a one-day annual event where volunteers visit national veteran cemeteries to care for trees and landscape."},
-			{"type": "embed", "url": "https://youtube.com/shorts/OhKzEKn3jOs", "provider": "youtube"},
+			{"type": "link", "url": "https://youtube.com/shorts/OhKzEKn3jOs", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/3d3c3c27-4c4c-47a0-8e55-af23464fcb2a/seed.jpg", SortOrder: 8, Status: models.StatusPublished,
 	},
@@ -109,7 +114,7 @@ var stubProjects = []models.Project{
 		Summary: "Featured on PG&E’s YouTube (35.2K subscribers) and Instagram (24K followers)",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "PG&E volunteers get their hands dirty at schools to get them ready and looking nice for the start of the school year."},
-			{"type": "embed", "url": "https://youtube.com/shorts/r2M18yIpaAY", "provider": "youtube"},
+			{"type": "link", "url": "https://youtube.com/shorts/r2M18yIpaAY", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/1cd33d69-ded1-4771-8bd4-f083d5c9b4c6/seed.jpg", SortOrder: 9, Status: models.StatusPublished,
 	},
@@ -118,7 +123,7 @@ var stubProjects = []models.Project{
 		Client: "KQED", Role: "Director, Creative Collaborator",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Join us on a wild adventure as we explore the ultimate animal rescue shelter in San Francisco! Watch contestants spin the wheel, answer quiz questions, and meet adorable furry friends. Don’t forget to subscribe for more wholesome content like this!"},
-			{"type": "embed", "url": "https://youtu.be/UeB-LalwVk8", "provider": "youtube"},
+			{"type": "link", "url": "https://youtu.be/UeB-LalwVk8", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/8e13a7f3-9211-492e-96b9-45248d06ae76/seed.jpg", SortOrder: 10, Status: models.StatusPublished,
 	},
@@ -127,7 +132,7 @@ var stubProjects = []models.Project{
 		Client: "BAVC Media", Role: "Cinematographer, Editor",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "“Comrade Is My Pronoun” explores the legacy of The Black Panther Party up close with former chairwoman Elaine Brown. We discuss what radical liberation looks like, and what it means to be in solidarity."},
-			{"type": "embed", "url": "https://youtu.be/GVqtoBQuNCA", "provider": "youtube"},
+			{"type": "link", "url": "https://youtu.be/GVqtoBQuNCA", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/b3892e1b-241b-4b7e-a2b1-abba50467472/seed.jpg", SortOrder: 11, Status: models.StatusPublished,
 	},
@@ -137,6 +142,7 @@ var stubProjects = []models.Project{
 		Summary: "Featured on KQED's main Instagram account (175K followers)",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Fun times at Dolores Park! From tennis and sunshine to the playground, there's something for everyone."},
+			{"type": "link", "url": "https://www.instagram.com/reel/C8u2ke1yeGX/?utm_source=ig_web_copy_link", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/8d2afe07-bb54-485e-b7df-3455752492be/seed.jpg", SortOrder: 12, Status: models.StatusPublished,
 	},
@@ -147,6 +153,7 @@ var stubProjects = []models.Project{
 		Summary: "Best Documentary at the 2023 Chabot Film & Animation Festival",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "A look into the students of Chabot College’s Fire Tech Academy."},
+			{"type": "link", "url": "https://drive.google.com/file/d/1qAlwTFvTLvIPsBsye1YFMifzzjiwauT5/view?usp=sharing", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/a74cc812-e212-4bc4-bef7-2796c9bb9481/seed.jpg", SortOrder: 13, Status: models.StatusPublished,
 	},
@@ -155,7 +162,7 @@ var stubProjects = []models.Project{
 		Client: "Chabot-Las Positas Community College", Role: "Producer, Cinematographer, Writer, and Editor",
 		Body: []models.RichTextBlock{
 			{"type": "paragraph", "text": "Jessie’s discovery uncovers a viscous monster that forces them to fight for their life."},
-			{"type": "embed", "url": "https://youtu.be/GrG66w4Tvyw", "provider": "youtube"},
+			{"type": "link", "url": "https://youtu.be/GrG66w4Tvyw", "label": "Watch Here"},
 		},
 		ThumbnailURL: "https://qsckqwxajgpxpzvlerdg.supabase.co/storage/v1/object/public/project-media/projects/2b35613b-5b7d-434e-8818-1de92896c690/seed.jpg", SortOrder: 14, Status: models.StatusPublished,
 	},

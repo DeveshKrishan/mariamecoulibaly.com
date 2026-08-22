@@ -29,8 +29,10 @@ import { ProjectPagination } from './ProjectPagination';
 
 function isLeadingMedia(
   block: RichTextBlock | undefined,
-): block is Extract<RichTextBlock, { type: 'image' | 'embed' }> {
-  return block?.type === 'image' || block?.type === 'embed';
+): block is Extract<RichTextBlock, { type: 'image' }> {
+  // Only still images lead the media column. Video/audio CTAs are buttons
+  // in the copy column (Squarespace parity — no iframe embeds).
+  return block?.type === 'image';
 }
 
 function splitLeadingMedia(body: RichTextBlock[]): {
@@ -45,10 +47,10 @@ function splitLeadingMedia(body: RichTextBlock[]): {
 
 /**
  * Full project detail section: title, date, client/role/summary meta,
- * rich-text body (paragraphs, images, embeds, links), and prev/next nav.
+ * rich-text body (paragraphs, images, link CTAs), and prev/next nav.
  *
  * Desktop layout matches the live Squarespace 12-col blog: full-width title
- * and date, then 4 cols leading media | 1 col gap | 7 cols copy + CTA.
+ * and date, then 4 cols leading image | 1 col gap | 7 cols copy + button CTA.
  */
 export function ProjectDetail({
   project,
@@ -225,7 +227,7 @@ export function ProjectDetail({
       <div className="grid grid-cols-1 items-start gap-y-8 md:grid-cols-12">
         <div className="md:col-span-4">
           {editMode ? (
-            media?.type === 'image' ? (
+            media ? (
               <div className="rounded border border-ink/15 p-3">
                 <p className="mb-2 text-xs tracking-wide text-ink/50 uppercase">
                   Leading image
@@ -240,22 +242,6 @@ export function ProjectDetail({
                     void saveField('body', project.body.slice(1));
                   }}
                 />
-              </div>
-            ) : media ? (
-              <div>
-                <p className="mb-2 text-xs text-ink/50">
-                  Leading embed — editing coming later
-                </p>
-                <ProjectBlock block={media} />
-                <button
-                  type="button"
-                  className="mt-2 border border-red-200 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
-                  onClick={() => {
-                    void saveField('body', project.body.slice(1));
-                  }}
-                >
-                  Remove leading media
-                </button>
               </div>
             ) : (
               <div className="space-y-3">

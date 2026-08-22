@@ -41,7 +41,7 @@ function blockEditorKey(block: RichTextBlock, index: number): string {
 
 /**
  * Edit-mode body editor for paragraph + image blocks.
- * Embed and link blocks stay visible but read-only until those editors land.
+ * Link CTA blocks stay visible but read-only until that editor lands.
  */
 export function EditableProjectBody({
   projectId,
@@ -135,7 +135,7 @@ export function EditableProjectBody({
           ) : (
             <div>
               <p className="mb-2 text-xs text-ink/50">
-                Embed/link editing coming later — shown as published.
+                Link CTA editing coming later — shown as published button.
               </p>
               <ProjectBlock block={block} />
             </div>
