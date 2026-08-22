@@ -149,7 +149,7 @@ func resolveImagesDir() (string, error) {
 		if err == nil && info.IsDir() {
 			abs, err := filepath.Abs(c)
 			if err != nil {
-				return c, nil
+				return "", fmt.Errorf("resolve images dir %q: %w", c, err)
 			}
 			return abs, nil
 		}
