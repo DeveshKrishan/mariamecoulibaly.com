@@ -1,6 +1,7 @@
 import type { Project } from '@mariame/shared';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { EditableThumbnail } from '../edit/EditableThumbnail';
 import { useEditMode } from '../../lib/editMode';
 
 /**
@@ -11,25 +12,30 @@ import { useEditMode } from '../../lib/editMode';
 export function ProjectCard({
   project,
   animate = true,
+  onThumbnailReplaced,
 }: {
   project: Project;
   /** Disable scroll fade-in (e.g. while dragging in edit mode). */
   animate?: boolean;
+  onThumbnailReplaced?: (next: Project) => void;
 }) {
   const { editMode } = useEditMode();
   const to = `/projects/${project.slug}${editMode ? '?edit=1' : ''}`;
 
+  const thumb = (
+    <EditableThumbnail
+      project={project}
+      alt={project.title}
+      aspect="square"
+      onReplaced={editMode ? onThumbnailReplaced : undefined}
+      imgClassName="h-full w-full object-cover"
+    />
+  );
+
   const inner = (
     <Link to={to} className="group block">
-      <div className="relative aspect-square overflow-hidden bg-neutral-100">
-        {project.thumbnailUrl ? (
-          <img
-            src={project.thumbnailUrl}
-            alt={project.title}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
-        ) : null}
+      <div className="relative">
+        {thumb}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-ink/0 transition-colors duration-500 group-hover:bg-ink/10"

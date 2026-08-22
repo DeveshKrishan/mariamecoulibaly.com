@@ -101,6 +101,15 @@ export function HomePage() {
           editable={editMode}
           onReorder={editMode ? handleReorder : undefined}
           onDelete={editMode ? handleDelete : undefined}
+          onThumbnailReplaced={
+            editMode
+              ? (next) => {
+                  setProjects((prev) =>
+                    prev.map((p) => (p.id === next.id ? next : p)),
+                  );
+                }
+              : undefined
+          }
         />
       )}
     </div>

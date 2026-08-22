@@ -152,3 +152,65 @@ export function projectToWritePayload(project: Project): ProjectWritePayload {
     publishedAt: project.publishedAt,
   };
 }
+
+export type MediaUploadURLResponse = {
+  uploadUrl: string;
+  publicUrl: string;
+  objectKey: string;
+};
+
+export function createMediaUploadUrl(
+  body: { projectId: string; contentType: string; byteSize: number },
+  accessToken: string,
+): Promise<MediaUploadURLResponse> {
+  return request<MediaUploadURLResponse>('/api/admin/media/upload-url', {
+    method: 'POST',
+    accessToken,
+    body: JSON.stringify(body),
+  });
+}
+
+const ALLOWED_THUMB_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+const MAX_THUMB_BYTES = 20 * 1024 * 1024;
+
+/** Mint a signed URL, PUT the file to Storage, then PATCH the project thumbnail. */
+export async function replaceProjectThumbnail(
+  project: Project,
+  file: File,
+  accessToken: string,
+): Promise<Project> {
+  if (!ALLOWED_THUMB_TYPES.has(file.type)) {
+    throw new Error('Use a JPEG, PNG, or WebP image');
+  }
+  if (file.size <= 0 || file.size > MAX_THUMB_BYTES) {
+    throw new Error('Image must be between 1 byte and 20 MB');
+  }
+
+  const { uploadUrl, publicUrl } = await createMediaUploadUrl(
+    {
+      projectId: project.id,
+      contentType: file.type,
+      byteSize: file.size,
+    },
+    accessToken,
+  );
+
+  const put = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  });
+  if (!put.ok) {
+    throw new Error(`Upload failed with status ${put.status}`);
+  }
+
+  return updateProject(
+    project.slug,
+    { ...projectToWritePayload(project), thumbnailUrl: publicUrl },
+    accessToken,
+  );
+}
