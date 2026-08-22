@@ -71,6 +71,35 @@ func TestCreateSignedUploadURL(t *testing.T) {
 	}
 }
 
+func TestUploadObject(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Fatalf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/storage/v1/object/project-media/projects/1/seed.jpg" {
+			t.Fatalf("path = %s", r.URL.Path)
+		}
+		if r.Header.Get("x-upsert") != "true" {
+			t.Fatal("expected x-upsert")
+		}
+		if r.Header.Get("Content-Type") != "image/jpeg" {
+			t.Fatalf("content-type = %q", r.Header.Get("Content-Type"))
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"Key":"project-media/projects/1/seed.jpg"}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		SupabaseURL:    srv.URL,
+		ServiceRoleKey: "secret",
+		HTTPClient:     srv.Client(),
+	})
+	if err := c.UploadObject(context.Background(), "projects/1/seed.jpg", "image/jpeg", []byte("img")); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDeleteObjectBestEffort(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {

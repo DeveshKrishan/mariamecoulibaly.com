@@ -101,6 +101,25 @@ pnpm dev:api                   # API reads from Postgres
 Without Docker / a remote Supabase project, omit `API_DATABASE_URL` and the
 API keeps serving in-memory stubs (same JSON shape).
 
+### Migrate seed thumbnails to Storage
+
+After the `project-media` bucket migration is applied and
+`API_SUPABASE_SERVICE_ROLE_KEY` is set:
+
+```bash
+# from repo root (or api/)
+export API_DATABASE_URL=...
+export API_SUPABASE_URL=https://<ref>.supabase.co
+export API_SUPABASE_SERVICE_ROLE_KEY=...
+make -C api migrate-media
+```
+
+This uploads each project's local `/images/projects/...` file into
+`projects/{id}/seed.{ext}` and updates `thumbnail_url` to the public Storage
+URL. Re-running is safe (upsert). Projects that already use Storage URLs are
+skipped. Static files under `ui/public/images/projects/` can remain for local
+fallback until you remove them later.
+
 When `API_DATABASE_URL` (or `DATABASE_URL`) **is** set, the process
 `Ping`s Postgres during startup (10s timeout) and exits if unreachable —
 it will not start listening on a bad connection.

@@ -134,6 +134,36 @@ func (c *Client) CreateSignedUploadURL(ctx context.Context, objectKey string) (u
 	return abs.String(), nil
 }
 
+// UploadObject uploads bytes to objectKey with the service role (upsert).
+// Used by one-shot seed migration; admin replaces use CreateSignedUploadURL.
+func (c *Client) UploadObject(ctx context.Context, objectKey, contentType string, data []byte) error {
+	if c == nil {
+		return fmt.Errorf("mediastore: client not configured")
+	}
+	key := strings.TrimLeft(objectKey, "/")
+	endpoint := fmt.Sprintf("%s/storage/v1/object/%s/%s", c.baseURL, c.bucket, key)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.serviceKey)
+	req.Header.Set("apikey", c.serviceKey)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("x-upsert", "true")
+
+	res, err := c.http.Do(req)
+	if err != nil {
+		return fmt.Errorf("mediastore: upload: %w", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	body, _ := io.ReadAll(io.LimitReader(res.Body, 1<<20))
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("mediastore: upload: status %d: %s", res.StatusCode, strings.TrimSpace(string(body)))
+	}
+	return nil
+}
+
 // DeleteObjectBestEffort removes an object; errors are returned for logging
 // but callers should not fail the user-facing request.
 func (c *Client) DeleteObjectBestEffort(ctx context.Context, objectKey string) error {
