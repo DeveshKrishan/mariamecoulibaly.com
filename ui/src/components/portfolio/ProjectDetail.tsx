@@ -284,36 +284,49 @@ export function ProjectDetail({
         <div className="md:col-span-7">
           <div className="text-sm">
             {editMode ? (
-              <>
-                <EditableField
-                  value={project.client}
-                  editMode
-                  onSave={(v) => void saveField('client', v)}
-                  className="mb-1 font-bold"
-                  inputClassName="mb-1 font-bold px-1"
-                  placeholder="Client"
-                  aria-label="Client"
-                />
-                <EditableField
-                  value={project.role}
-                  editMode
-                  onSave={(v) => void saveField('role', v)}
-                  className="mb-1"
-                  inputClassName="mb-1 px-1"
-                  placeholder="Role"
-                  aria-label="Role"
-                />
-                <EditableField
-                  value={project.summary}
-                  editMode
-                  multiline
-                  onSave={(v) => void saveField('summary', v)}
-                  className="mb-1"
-                  inputClassName="mb-1 px-1"
-                  placeholder="Summary"
-                  aria-label="Summary"
-                />
-              </>
+              <div className="space-y-3">
+                <div className="rounded border border-ink/15 p-3">
+                  <p className="mb-2 text-xs tracking-wide text-ink/50 uppercase">
+                    Client
+                  </p>
+                  <EditableField
+                    value={project.client}
+                    editMode
+                    onSave={(v) => void saveField('client', v)}
+                    className="font-bold"
+                    inputClassName="font-bold px-1"
+                    placeholder="Client"
+                    aria-label="Client"
+                  />
+                </div>
+                <div className="rounded border border-ink/15 p-3">
+                  <p className="mb-2 text-xs tracking-wide text-ink/50 uppercase">
+                    Role
+                  </p>
+                  <EditableField
+                    value={project.role}
+                    editMode
+                    onSave={(v) => void saveField('role', v)}
+                    inputClassName="px-1"
+                    placeholder="Role"
+                    aria-label="Role"
+                  />
+                </div>
+                <div className="rounded border border-ink/15 p-3">
+                  <p className="mb-2 text-xs tracking-wide text-ink/50 uppercase">
+                    Summary
+                  </p>
+                  <EditableField
+                    value={project.summary}
+                    editMode
+                    multiline
+                    onSave={(v) => void saveField('summary', v)}
+                    inputClassName="px-1"
+                    placeholder="Summary"
+                    aria-label="Summary"
+                  />
+                </div>
+              </div>
             ) : (
               <>
                 {hasContent(project.client) ? (
