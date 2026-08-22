@@ -215,6 +215,10 @@ export function ProjectDetail({
               ? 'Draft — not visible on the public site'
               : 'Published — visible on the public site'}
           </p>
+        ) : project.status === 'draft' ? (
+          <p className="mb-4 text-xs tracking-wide text-ink/60 uppercase">
+            Draft preview — not visible on the public site
+          </p>
         ) : null}
       </header>
 
