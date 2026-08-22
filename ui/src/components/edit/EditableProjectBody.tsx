@@ -127,7 +127,7 @@ export function EditableProjectBody({
               onChange={(next) => updateAt(index, next)}
             />
           ) : isImage(block) ? (
-            <ImageEditor
+            <EditableImageBlock
               projectId={projectId}
               block={block}
               onChange={(next) => updateAt(index, next)}
@@ -193,14 +193,18 @@ function ParagraphEditor({
   );
 }
 
-function ImageEditor({
+/** Image block editor: preview + URL/alt/href + upload (max 20 MB). */
+export function EditableImageBlock({
   projectId,
   block,
   onChange,
+  onRemove,
 }: {
   projectId: string;
   block: ImageBlock;
   onChange: (next: ImageBlock) => void;
+  /** Optional — used for leading-column remove. */
+  onRemove?: () => void;
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -325,6 +329,15 @@ function ImageEditor({
         >
           {busy ? 'Uploading…' : 'Upload image'}
         </button>
+        {onRemove ? (
+          <button
+            type="button"
+            className="border border-red-200 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
+            onClick={onRemove}
+          >
+            Remove
+          </button>
+        ) : null}
         <span className="text-xs text-ink/50">{IMAGE_UPLOAD_HINT}</span>
         <input
           id={inputId}
