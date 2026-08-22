@@ -54,6 +54,32 @@ export function AboutPage() {
     void savePage({ ...page, links });
   }
 
+  function addLink() {
+    if (!page) return;
+    void savePage({
+      ...page,
+      links: [...page.links, { label: 'New link', url: 'https://' }],
+    });
+  }
+
+  function removeLink(index: number) {
+    if (!page) return;
+    void savePage({
+      ...page,
+      links: page.links.filter((_, i) => i !== index),
+    });
+  }
+
+  function moveLink(index: number, delta: number) {
+    if (!page) return;
+    const target = index + delta;
+    if (target < 0 || target >= page.links.length) return;
+    const links = page.links.slice();
+    const [item] = links.splice(index, 1);
+    links.splice(target, 0, item!);
+    void savePage({ ...page, links });
+  }
+
   // Bleed under the fixed header (PageLayout main pt-[4.5rem]) so the
   // transparent nav’s light text sits on the dark hero, not the white page.
   const heroBleed =
@@ -104,10 +130,13 @@ export function AboutPage() {
 
           <div className="md:col-span-5 md:col-start-20 md:justify-self-end">
             <p className="text-sm font-bold tracking-wide">My Links</p>
-            <div className="mt-2 flex flex-col gap-1 text-xs tracking-wide">
+            <div className="mt-2 flex flex-col gap-2 text-xs tracking-wide">
               {page.links.map((link, index) =>
                 editMode ? (
-                  <div key={`${link.url}-${index}`} className="flex flex-col gap-1">
+                  <div
+                    key={`edit-link-${index}`}
+                    className="flex flex-col gap-1 border border-white/20 p-2"
+                  >
                     <EditableField
                       value={link.label}
                       editMode
@@ -122,10 +151,35 @@ export function AboutPage() {
                       inputClassName="px-1 outline-white/40 text-white/80"
                       aria-label={`Link ${index + 1} URL`}
                     />
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <button
+                        type="button"
+                        className="border border-white/30 px-2 py-0.5 text-[10px] tracking-wide text-white/90 hover:bg-white/10 disabled:opacity-40"
+                        disabled={index === 0}
+                        onClick={() => moveLink(index, -1)}
+                      >
+                        Up
+                      </button>
+                      <button
+                        type="button"
+                        className="border border-white/30 px-2 py-0.5 text-[10px] tracking-wide text-white/90 hover:bg-white/10 disabled:opacity-40"
+                        disabled={index === page.links.length - 1}
+                        onClick={() => moveLink(index, 1)}
+                      >
+                        Down
+                      </button>
+                      <button
+                        type="button"
+                        className="border border-red-300/50 px-2 py-0.5 text-[10px] tracking-wide text-red-100 hover:bg-red-900/40"
+                        onClick={() => removeLink(index)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <a
-                    key={link.url}
+                    key={`${link.url}-${index}`}
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -135,6 +189,15 @@ export function AboutPage() {
                   </a>
                 ),
               )}
+              {editMode ? (
+                <button
+                  type="button"
+                  onClick={addLink}
+                  className="mt-1 w-fit border border-white/40 px-3 py-1.5 text-xs tracking-wide text-white hover:bg-white/10"
+                >
+                  Add link
+                </button>
+              ) : null}
             </div>
           </div>
         </motion.div>
