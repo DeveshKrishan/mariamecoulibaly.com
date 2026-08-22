@@ -170,29 +170,46 @@ export function createMediaUploadUrl(
   });
 }
 
-const ALLOWED_THUMB_TYPES = new Set([
+export const ALLOWED_IMAGE_TYPES = new Set([
   'image/jpeg',
   'image/png',
   'image/webp',
 ]);
-const MAX_THUMB_BYTES = 20 * 1024 * 1024;
 
-/** Mint a signed URL, PUT the file to Storage, then PATCH the project thumbnail. */
-export async function replaceProjectThumbnail(
-  project: Project,
-  file: File,
-  accessToken: string,
-): Promise<Project> {
-  if (!ALLOWED_THUMB_TYPES.has(file.type)) {
+/** Matches API `maxImageBytes` / Supabase Storage limit for project images. */
+export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
+
+export const IMAGE_UPLOAD_HINT = 'JPEG, PNG, or WebP · max 20 MB';
+
+/** Validate a file before minting an upload URL. Throws with admin-facing copy. */
+export function assertImageFile(file: File): void {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
     throw new Error('Use a JPEG, PNG, or WebP image');
   }
-  if (file.size <= 0 || file.size > MAX_THUMB_BYTES) {
-    throw new Error('Image must be between 1 byte and 20 MB');
+  if (file.size <= 0) {
+    throw new Error('Image file is empty');
   }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(
+      `Image is too large (max 20 MB). This file is ${(file.size / (1024 * 1024)).toFixed(1)} MB.`,
+    );
+  }
+}
+
+/**
+ * Mint a signed URL and PUT the file to Storage. Returns the public object URL.
+ * Does not PATCH the project — callers update thumbnail or body as needed.
+ */
+export async function uploadProjectImage(
+  projectId: string,
+  file: File,
+  accessToken: string,
+): Promise<string> {
+  assertImageFile(file);
 
   const { uploadUrl, publicUrl } = await createMediaUploadUrl(
     {
-      projectId: project.id,
+      projectId,
       contentType: file.type,
       byteSize: file.size,
     },
@@ -208,6 +225,16 @@ export async function replaceProjectThumbnail(
     throw new Error(`Upload failed with status ${put.status}`);
   }
 
+  return publicUrl;
+}
+
+/** Mint a signed URL, PUT the file to Storage, then PATCH the project thumbnail. */
+export async function replaceProjectThumbnail(
+  project: Project,
+  file: File,
+  accessToken: string,
+): Promise<Project> {
+  const publicUrl = await uploadProjectImage(project.id, file, accessToken);
   return updateProject(
     project.slug,
     { ...projectToWritePayload(project), thumbnailUrl: publicUrl },

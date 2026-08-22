@@ -160,3 +160,12 @@ describe('api client', () => {
     expect(call[1]).toMatchObject({ method: 'PUT' });
   });
 });
+
+describe('assertImageFile', () => {
+  it('rejects files over 20 MB with an explicit max message', async () => {
+    const { assertImageFile, MAX_IMAGE_BYTES } = await import('./api');
+    const file = new File(['x'], 'big.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(file, 'size', { value: MAX_IMAGE_BYTES + 1 });
+    expect(() => assertImageFile(file)).toThrow(/max 20 MB/i);
+  });
+});

@@ -1,6 +1,10 @@
 import type { Project } from '../../types/content';
 import { useEffect, useId, useRef, useState } from 'react';
-import { replaceProjectThumbnail } from '../../lib/api';
+import {
+  IMAGE_UPLOAD_HINT,
+  assertImageFile,
+  replaceProjectThumbnail,
+} from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useEditMode } from '../../lib/editMode';
 
@@ -32,6 +36,7 @@ export function EditableThumbnail({
   const { editMode, runSave } = useEditMode();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -47,6 +52,15 @@ export function EditableThumbnail({
 
   async function onFileChange(file: File | undefined) {
     if (!file || !accessToken || !onReplaced || busy) return;
+    setLocalError(null);
+    try {
+      assertImageFile(file);
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : 'Invalid image');
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
     const local = URL.createObjectURL(file);
     setPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -62,7 +76,8 @@ export function EditableThumbnail({
         if (prev) URL.revokeObjectURL(prev);
         return null;
       });
-    } catch {
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : 'Upload failed');
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
@@ -106,7 +121,7 @@ export function EditableThumbnail({
           <label
             htmlFor={inputId}
             className={[
-              'absolute inset-0 flex cursor-pointer items-center justify-center',
+              'absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-1 px-2 text-center',
               'bg-ink/0 text-sm tracking-wide text-white opacity-0 transition',
               'hover:bg-ink/45 hover:opacity-100 focus-within:bg-ink/45 focus-within:opacity-100',
               busy ? 'pointer-events-none opacity-100 bg-ink/45' : '',
@@ -126,7 +141,12 @@ export function EditableThumbnail({
               }
             }}
           >
-            {busy ? 'Uploading…' : 'Replace image'}
+            <span>{busy ? 'Uploading…' : 'Replace image'}</span>
+            {!busy ? (
+              <span className="text-xs font-normal tracking-normal opacity-90">
+                {IMAGE_UPLOAD_HINT}
+              </span>
+            ) : null}
           </label>
           <input
             id={inputId}
@@ -140,6 +160,14 @@ export function EditableThumbnail({
               void onFileChange(e.target.files?.[0]);
             }}
           />
+          {localError ? (
+            <p
+              className="absolute right-0 bottom-0 left-0 bg-red-50/95 px-2 py-1 text-center text-xs text-red-800"
+              role="alert"
+            >
+              {localError}
+            </p>
+          ) : null}
         </>
       ) : null}
     </div>

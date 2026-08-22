@@ -1,8 +1,17 @@
-import type { ContentStatus, Project, RichTextBlock } from '../../types/content';
+import type {
+  ContentStatus,
+  ImageBlock,
+  Project,
+  RichTextBlock,
+} from '../../types/content';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { EditableDate } from '../edit/EditableDate';
 import { EditableField } from '../edit/EditableField';
+import {
+  EditableImageBlock,
+  EditableProjectBody,
+} from '../edit/EditableProjectBody';
 import { EditableSlug } from '../edit/EditableSlug';
 import { EditableThumbnail } from '../edit/EditableThumbnail';
 import {
@@ -211,7 +220,65 @@ export function ProjectDetail({
 
       <div className="grid grid-cols-1 items-start gap-y-8 md:grid-cols-12">
         <div className="md:col-span-4">
-          {media ? (
+          {editMode ? (
+            media?.type === 'image' ? (
+              <div className="rounded border border-ink/15 p-3">
+                <p className="mb-2 text-xs tracking-wide text-ink/50 uppercase">
+                  Leading image
+                </p>
+                <EditableImageBlock
+                  projectId={project.id}
+                  block={media}
+                  onChange={(next) => {
+                    void saveField('body', [next, ...project.body.slice(1)]);
+                  }}
+                  onRemove={() => {
+                    void saveField('body', project.body.slice(1));
+                  }}
+                />
+              </div>
+            ) : media ? (
+              <div>
+                <p className="mb-2 text-xs text-ink/50">
+                  Leading embed — editing coming later
+                </p>
+                <ProjectBlock block={media} />
+                <button
+                  type="button"
+                  className="mt-2 border border-red-200 px-3 py-1.5 text-xs tracking-wide text-red-800 hover:bg-red-50"
+                  onClick={() => {
+                    void saveField('body', project.body.slice(1));
+                  }}
+                >
+                  Remove leading media
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <EditableThumbnail
+                  project={project}
+                  alt={project.title}
+                  aspect="natural"
+                  imgClassName="w-full object-cover"
+                  onReplaced={onProjectChange}
+                />
+                <button
+                  type="button"
+                  className="border border-ink px-3 py-1.5 text-xs tracking-wide hover:bg-ink hover:text-white"
+                  onClick={() => {
+                    const leading: ImageBlock = {
+                      type: 'image',
+                      url: project.thumbnailUrl || '',
+                      alt: project.title,
+                    };
+                    void saveField('body', [leading, ...project.body]);
+                  }}
+                >
+                  Add leading image
+                </button>
+              </div>
+            )
+          ) : media ? (
             <ProjectBlock block={media} />
           ) : (
             <EditableThumbnail
@@ -271,7 +338,22 @@ export function ProjectDetail({
               </>
             )}
           </div>
-          <ProjectBody body={rest} />
+          {editMode ? (
+            <EditableProjectBody
+              projectId={project.id}
+              body={rest}
+              onSave={(nextRest) => {
+                const leading = project.body[0];
+                if (isLeadingMedia(leading)) {
+                  void saveField('body', [leading, ...nextRest]);
+                } else {
+                  void saveField('body', nextRest);
+                }
+              }}
+            />
+          ) : (
+            <ProjectBody body={rest} />
+          )}
         </div>
       </div>
 
